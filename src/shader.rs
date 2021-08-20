@@ -1,8 +1,7 @@
 use std::fs;
 use std::ptr;
 
-use gl::types::GLchar;
-use gl::types::GLint;
+use gl::types::*;
 
 pub struct Shader {
   pub program: u32,
@@ -32,49 +31,12 @@ impl Shader {
       // Compile vertex shader
       gl::ShaderSource( vertex, 1, &vertex_source_ptr, ptr::null() );
       gl::CompileShader( vertex );
-      
-      {
-        let mut is_vertex_compiled: GLint = 0;
-        gl::GetShaderiv( vertex, gl::COMPILE_STATUS, &mut is_vertex_compiled );
-        if is_vertex_compiled == gl::FALSE.into() {
-          let mut max_length = 0;
-  
-          gl::GetShaderiv( vertex, gl::INFO_LOG_LENGTH, &mut max_length );
-  
-          // error log as array of GLchar
-          let mut error_log = Vec::with_capacity( max_length as usize );
-          gl::GetShaderInfoLog( vertex, max_length, &mut max_length, error_log.as_mut_ptr() as *mut GLchar );  
-          error_log.set_len( max_length as usize );
-
-          panic!( "VERTEX SHADER COMPILATION FAILED:\n\t{}", String::from_utf8( error_log ).unwrap() );
-        }
-        else {
-          println!( "VERTEX SHADER COMPILATION SUCCEEDED WITH STATE {}", is_vertex_compiled );
-        }
-      }
+      Shader::check_shader_errors( vertex, "vertex", shader_path );
 
       // Compile fragment shader
       gl::ShaderSource( fragment, 1, &fragment_source_ptr, ptr::null() ); 
       gl::CompileShader( fragment );
-
-      {
-        let mut is_fragment_compiled: GLint = 0;
-        gl::GetShaderiv( fragment, gl::COMPILE_STATUS, &mut is_fragment_compiled );
-        if is_fragment_compiled == gl::FALSE.into() {
-          let mut max_length = 0;
-  
-          gl::GetShaderiv( fragment, gl::INFO_LOG_LENGTH, &mut max_length );
-  
-          let mut error_log = Vec::with_capacity( max_length as usize );
-          gl::GetShaderInfoLog( fragment, max_length, &mut max_length, error_log.as_mut_ptr() as *mut GLchar );  
-          error_log.set_len( max_length as usize );
-
-          panic!( "FRAGMENT SHADER COMPILATION FAILED:\n\t{}", String::from_utf8( error_log ).unwrap() );
-        }
-        else {
-          println!( "FRAGMENT SHADER COMPILATION SUCCEEDED WITH STATE {}", is_fragment_compiled );
-        }
-      }
+      Shader::check_shader_errors( fragment, "fragment", shader_path );
 
       // Attach to program
       gl::AttachShader( program, vertex );
@@ -93,6 +55,31 @@ impl Shader {
         vertex,
         fragment
       }
+    }
+  }
+
+  fn check_shader_errors( shader: GLuint, shader_type: &str, shader_path: &str ) {
+    let mut is_fragment_compiled: GLint = 0;
+    unsafe {
+      gl::GetShaderiv( shader, gl::COMPILE_STATUS, &mut is_fragment_compiled );
+    }
+    if is_fragment_compiled == gl::FALSE.into() {
+      let mut max_length = 0;
+
+      unsafe {
+        gl::GetShaderiv( shader, gl::INFO_LOG_LENGTH, &mut max_length );
+      }
+
+      let mut error_log = Vec::with_capacity( max_length as usize );
+      unsafe {
+        gl::GetShaderInfoLog( shader, max_length, &mut max_length, error_log.as_mut_ptr() as *mut GLchar );  
+        error_log.set_len( max_length as usize );
+      }
+
+      panic!( "Shader {} ('{}') compile failed:\n\t{}", shader_type, shader_path, String::from_utf8( error_log ).unwrap() );
+    }
+    else {
+      println!( "Shader {} ('{}') compilation success", shader_type, shader_path );
     }
   }
 
