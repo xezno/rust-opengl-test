@@ -2,11 +2,11 @@ extern crate sdl2;
 extern crate gl;
 
 use gl::types::*;
-use core::ffi::c_void;
-use std::ptr;
 
 pub mod shader;
 use shader::Shader;
+pub mod mesh;
+use mesh::Mesh;
 
 fn main() {
     let _sdl = sdl2::init().unwrap();
@@ -24,30 +24,13 @@ fn main() {
     // Create triangle
     //
     let _shader = Shader::new( "content/shaders/triangle.glsl" );
-    let mut vbo: GLuint = 0;
-    unsafe {
-
-        // Triangle vertices
-        let vertices: [GLfloat; 9] = [
+    let model = Mesh::new(
+        [
             -0.5, -0.5, 0.0,
             0.5, -0.5, 0.0,
             0.0, 0.5, 0.0
-        ];
-    
-        gl::CreateBuffers( 1, &mut vbo );
-        gl::BindBuffer( gl::ARRAY_BUFFER, vbo );
-        
-        // Buffer data
-        gl::BufferData( gl::ARRAY_BUFFER,
-            (vertices.len() * std::mem::size_of::<GLfloat>()) as GLsizeiptr,
-            &vertices[0] as *const GLfloat as *const c_void,
-            gl::STATIC_DRAW );
-
-        // Attributes
-        // Position
-        gl::VertexAttribPointer( 0, 3, gl::FLOAT, gl::FALSE, 0, ptr::null() );
-        gl::EnableVertexAttribArray( 0 );
-    }
+        ].to_vec()
+    );
     
     let mut _event_pump = _sdl.event_pump().unwrap();
     'main: loop {
@@ -62,8 +45,8 @@ fn main() {
         unsafe {
             _shader.use_this();
 
-            gl::BindBuffer( gl::ARRAY_BUFFER, vbo );
-            gl::DrawArrays( gl::TRIANGLES, 0, 3 );
+            gl::BindBuffer( gl::ARRAY_BUFFER, model.vbo );
+            gl::DrawArrays( gl::TRIANGLES, 0, model.vertexCount );
         }
 
         _window.gl_swap_window();
