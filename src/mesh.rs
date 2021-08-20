@@ -11,10 +11,10 @@ pub struct Mesh {
 }
 
 impl Mesh {
-  pub fn new(vertices: Vec<GLfloat>) -> Mesh {
+  pub fn new( vertices: Vec<GLfloat> ) -> Mesh {
     let mut model: Mesh = Mesh {
       vbo: 0,
-      vertex_count: (vertices.len() / 3) as GLint
+      vertex_count: ( vertices.len() / 3 ) as GLint
     };
 
     unsafe {
@@ -34,5 +34,12 @@ impl Mesh {
     }
 
     return model;
+  }
+
+  pub fn draw_this( &self ) {
+    unsafe {
+      gl::BindBuffer( gl::ARRAY_BUFFER, self.vbo );
+      gl::DrawArrays( gl::TRIANGLES, 0, self.vertex_count );
+    }
   }
 }

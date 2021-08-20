@@ -25,7 +25,7 @@ fn main() {
   // Create triangle
   //
   let _shader = Shader::new( "content/shaders/triangle.glsl" );
-  let model = Mesh::new(
+  let _model = Mesh::new(
     [
       -0.5, -0.5, 0.0,
       0.5, -0.5, 0.0,
@@ -41,14 +41,8 @@ fn main() {
 
     gfx_clear();
 
-    // Draw code here
-
-    unsafe {
-      _shader.use_this();
-
-      gl::BindBuffer( gl::ARRAY_BUFFER, model.vbo );
-      gl::DrawArrays( gl::TRIANGLES, 0, model.vertex_count );
-    }
+    _shader.use_this();
+    _model.draw_this();
 
     _window.gl_swap_window();
   }
