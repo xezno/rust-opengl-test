@@ -7,14 +7,14 @@ use std::ffi::c_void;
 pub struct Mesh {
   // vertices: Vec<Vertex>,
   pub vbo: GLuint,
-  pub vertexCount: GLint
+  pub vertex_count: GLint
 }
 
 impl Mesh {
   pub fn new(vertices: Vec<GLfloat>) -> Mesh {
     let mut model: Mesh = Mesh {
       vbo: 0,
-      vertexCount: (vertices.len() / 3) as GLint
+      vertex_count: (vertices.len() / 3) as GLint
     };
 
     unsafe {

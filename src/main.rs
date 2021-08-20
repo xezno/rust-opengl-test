@@ -47,7 +47,7 @@ fn main() {
       _shader.use_this();
 
       gl::BindBuffer( gl::ARRAY_BUFFER, model.vbo );
-      gl::DrawArrays( gl::TRIANGLES, 0, model.vertexCount );
+      gl::DrawArrays( gl::TRIANGLES, 0, model.vertex_count );
     }
 
     _window.gl_swap_window();
