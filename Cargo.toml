@@ -9,4 +9,7 @@ edition = "2018"
 sdl2 = { version = "0.34.5", features = [ "bundled", "static-link" ] }
 wavefront_obj = "10.0.0"
 gl = "0.14.0"
-glam = "0.17.3"
+glam = { version = "0.17.3", features = [ "serde" ] }
+serde_json = "1.0.66"
+serde = "1.0.129"
+serde_derive = "1.0.129"

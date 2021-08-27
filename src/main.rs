@@ -13,13 +13,15 @@ pub mod camera;
 pub mod gfx;
 pub mod mesh;
 pub mod model;
+pub mod scene;
 pub mod shader;
 pub mod time;
+pub mod transform;
 
 use camera::Camera;
 use gfx::*;
 use glam::*;
-use model::Model;
+use scene::Scene;
 use shader::Shader;
 use time::*;
 
@@ -56,6 +58,8 @@ fn main() {
     //
     // Scene setup
     //
+    let scene = Scene::new("content/scene.json");
+    let loaded_scene = scene.load();
 
     // Create camera
     let mut camera = Camera::new();
@@ -64,7 +68,7 @@ fn main() {
     let mut shader = Shader::new("content/shaders/standard.glsl");
     shader.scan_uniforms();
 
-    let model = Model::new("content/models/monkey.obj");
+    // let model = Model::new("content/models/monkey.obj");
     let mut event_pump = sdl.event_pump().unwrap();
 
     'main: loop {
@@ -75,7 +79,7 @@ fn main() {
             if !input_event_poll(&mut event_pump) {
                 break 'main;
             }
-            
+
             // TODO: Proper time delta
             update_time(0.005);
             camera.update();
@@ -86,7 +90,8 @@ fn main() {
         //
         {
             gfx_clear();
-            model.draw_this(&mut shader, &mut camera);
+            // model.draw_this(&mut shader, &mut camera);
+            loaded_scene.draw_this(&mut shader, &mut camera);
             window.gl_swap_window();
         }
     }

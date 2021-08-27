@@ -1,0 +1,28 @@
+{
+  "type": "scene",
+  "name": "scene_1",
+
+  "objects": [
+    {
+      "type": "model",
+      "name": "model_1",
+      "path": "content/models/monkey.obj",
+      "transform": {
+        "position": [2.0, 0.0, 0.0],
+        "rotation": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    },
+    {
+      "type": "model",
+      "name": "model_2",
+      "path": "content/models/monkey.obj",
+      "transform": {
+        "position": [-2.0, 0.0, 0.0],
+        "rotation": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      }
+    }
+  ]
+
+}
