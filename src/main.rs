@@ -14,29 +14,30 @@ pub mod gfx;
 pub mod mesh;
 pub mod model;
 pub mod shader;
+pub mod time;
 
 use camera::Camera;
 use gfx::*;
 use glam::*;
 use model::Model;
 use shader::Shader;
+use time::*;
 
 fn main() {
-    let _sdl = sdl2::init().unwrap();
-    let _video_subsystem = _sdl.video().unwrap();
+    let sdl = sdl2::init().unwrap();
+    let video_subsystem = sdl.video().unwrap();
 
-    let mut _window = _video_subsystem
-        .window("My Game", 1280, 720)
+    let mut window = video_subsystem
+        .window("", 1280, 720)
         .opengl()
         .resizable()
         .build()
         .unwrap();
 
-    let _gl_context = _window.gl_create_context().unwrap();
+    let _gl_context = window.gl_create_context().unwrap();
 
-    let _gl = gl::load_with(|s| _video_subsystem.gl_get_proc_address(s) as *const _);
-    let _viewport =
-        gl::Viewport::load_with(|s| _video_subsystem.gl_get_proc_address(s) as *const _);
+    let _gl = gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
+    let _viewport = gl::Viewport::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
 
     unsafe {
         let mut major = -1;
@@ -45,7 +46,7 @@ fn main() {
         let mut minor = -1;
         gl::GetIntegerv(gl::MINOR_VERSION, &mut minor);
 
-        _window
+        window
             .set_title(format!("My Game, OpenGL {}.{}", major, minor).as_str())
             .unwrap();
     }
@@ -64,31 +65,30 @@ fn main() {
     shader.scan_uniforms();
 
     let model = Model::new("content/models/monkey.obj");
-    let mut event_pump = _sdl.event_pump().unwrap();
-
-    let mut time: f32 = 0.0;
-    let distance = 5.0;
+    let mut event_pump = sdl.event_pump().unwrap();
 
     'main: loop {
-        if !input_event_poll(&mut event_pump) {
-            break 'main;
+        //
+        // Update
+        //
+        {
+            if !input_event_poll(&mut event_pump) {
+                break 'main;
+            }
+            
+            // TODO: Proper time delta
+            update_time(0.005);
+            camera.update();
         }
 
-        gfx_clear();
-
-        // sine
-        time = time + 0.005;
-        let sin_time = (time).sin();
-        let cos_time = (time).cos();
-
-        let x = sin_time * distance;
-        let y = cos_time * distance;
-
-        camera.set_position_calc_view_proj_mat(Vec3::new(x, y, 0.0));
-
-        model.draw_this(&mut shader, &mut camera);
-
-        _window.gl_swap_window();
+        //
+        // Render
+        //
+        {
+            gfx_clear();
+            model.draw_this(&mut shader, &mut camera);
+            window.gl_swap_window();
+        }
     }
 }
 

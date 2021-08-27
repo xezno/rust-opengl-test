@@ -20,6 +20,8 @@ pub struct Camera {
     pub proj_mat: Mat4,
 
     pub proj_view_mat: Mat4,
+
+    distance: f32,
 }
 
 impl Camera {
@@ -37,6 +39,8 @@ impl Camera {
             proj_mat: Mat4::IDENTITY,
 
             proj_view_mat: Mat4::IDENTITY,
+
+            distance: 5.0,
         };
 
         cam.calc_view_proj_mat();
@@ -52,6 +56,18 @@ impl Camera {
     pub fn set_rotation_calc_view_proj_mat(&mut self, rot: Quat) {
         self.rotation = rot;
         self.calc_view_proj_mat();
+    }
+
+    pub fn update(&mut self) {
+        // sine
+        let time = crate::time::get_time();
+        let sin_time = (time.total).sin();
+        let cos_time = (time.total).cos();
+
+        let x = sin_time * self.distance;
+        let y = cos_time * self.distance;
+
+        self.set_position_calc_view_proj_mat(Vec3::new(x, y, 0.0));
     }
 
     fn calc_view_proj_mat(&mut self) {
