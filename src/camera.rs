@@ -55,20 +55,14 @@ impl Camera {
     }
 
     fn calc_view_proj_mat(&mut self) {
-        // Calculate view / projection mats
-        let forward = Vec3::X;
         self.view_mat = Mat4::look_at_rh(self.position, Vec3::ZERO, Vec3::Z);
         self.proj_mat = Mat4::perspective_rh(
             self.fov.to_radians(),
-            1280.0 / 720.0,
+            1280.0 / 720.0, // TODO: Get the screen size properly
             self.z_near,
             self.z_far,
         );
 
         self.proj_view_mat = self.proj_mat * self.view_mat;
-
-        // println!("View matrix: {}", self.view_mat);
-        // println!("Proj matrix: {}", self.proj_mat);
-        // println!("Proj view matrix: {}", self.proj_view_mat);
     }
 }

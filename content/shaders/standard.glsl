@@ -28,7 +28,6 @@ void main()
   fs_in.vNormal = inNormal;
   fs_in.vScreenPos = uProjViewMat * uModelMat * vec4( inPos, 1.0 );
   
-  //gl_Position = vec4( fs_in.vWorldPos, 1.0 );
   gl_Position = fs_in.vScreenPos;
 }
 

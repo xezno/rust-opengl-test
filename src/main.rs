@@ -60,10 +60,10 @@ fn main() {
     let mut camera = Camera::new();
 
     // Create triangle
-    let mut shader = Shader::new("content/shaders/triangle.glsl");
+    let mut shader = Shader::new("content/shaders/standard.glsl");
     shader.scan_uniforms();
 
-    let mut model = Model::new("content/models/monkey.obj");
+    let model = Model::new("content/models/monkey.obj");
     let mut event_pump = _sdl.event_pump().unwrap();
 
     let mut time: f32 = 0.0;

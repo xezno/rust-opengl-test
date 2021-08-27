@@ -9,10 +9,9 @@
 use gl::types::*;
 
 use std::ffi::c_void;
-use std::{mem, ptr};
+use std::ptr;
 
 pub struct Mesh {
-    // vertices: Vec<GLfloat>,
     pub vbo: GLuint,
     pub vertex_count: GLint,
 }
