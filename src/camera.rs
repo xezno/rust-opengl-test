@@ -21,7 +21,8 @@ pub struct Camera {
 
     pub proj_view_mat: Mat4,
 
-    distance: f32,
+    orbit_distance: f32,
+    height: f32,
 }
 
 impl Camera {
@@ -40,7 +41,8 @@ impl Camera {
 
             proj_view_mat: Mat4::IDENTITY,
 
-            distance: 5.0,
+            orbit_distance: 5.0,
+            height: 2.0,
         };
 
         cam.calc_view_proj_mat();
@@ -64,10 +66,10 @@ impl Camera {
         let sin_time = (time.total).sin();
         let cos_time = (time.total).cos();
 
-        let x = sin_time * self.distance;
-        let y = cos_time * self.distance;
+        let x = sin_time * self.orbit_distance;
+        let y = cos_time * self.orbit_distance;
 
-        self.set_position_calc_view_proj_mat(Vec3::new(x, y, 0.0));
+        self.set_position_calc_view_proj_mat(Vec3::new(x, y, self.height));
     }
 
     // TODO: Floating point depth buffer

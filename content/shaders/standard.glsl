@@ -63,11 +63,11 @@ void main()
   vec3 normal = normalize( fs_in.vNormal );
 
   float lambertian = lambert( normal, lightDir ) + 0.1;
-  float spec = specular( normal, lightDir, normalize( fs_in.vWorldPos - uCamPos ), 4.0 );
+  float spec = specular( normal, lightDir, normalize( fs_in.vWorldPos - uCamPos ), 64.0 );
 
   vec3 lighting = 
-    (fs_in.vScreenPos.xyz * lambertian) +
-    (vec3(1.0, 1.0, 1.0) * spec);
+    (vec3(0.23,0.37,0.87) * lambertian) +
+    (vec3(0.23,0.37,0.87) * spec);
 
   FragColor = vec4( lighting, 1.0 );
 } 
