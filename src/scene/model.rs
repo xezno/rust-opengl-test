@@ -11,7 +11,7 @@ use glam::*;
 use gl::types::*;
 
 use super::{camera::Camera, transform::Transform};
-use crate::render::{mesh::Mesh, shader::Shader};
+use crate::render::{material::Material, mesh::Mesh, shader::Shader};
 
 pub struct Vertex {
     pub position: Vec3,
@@ -24,6 +24,7 @@ pub struct Vertex {
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub transform: Transform,
+    pub material: Material,
 }
 
 impl Model {
@@ -31,6 +32,7 @@ impl Model {
         let mut model = Model {
             meshes: Vec::new(),
             transform: Transform::IDENTITY,
+            material: Material::default(),
         };
 
         println!("Loading OBJ from '{}'", obj_path);
@@ -95,16 +97,15 @@ impl Model {
         for mesh in &self.meshes {
             shader.use_this();
             {
-                // Submit camera matrix
-                shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
-
-                // Submit model matrix
+                // Calc model matrix
                 let mut model_mat = Mat4::from_translation(self.transform.position);
                 model_mat *= Mat4::from_scale(self.transform.scale);
                 model_mat *= Mat4::from_quat(self.transform.rotation);
 
+                // Submit shader uniforms
+                shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
                 shader.set_mat4("uModelMat", &model_mat);
-
+                shader.set_vec4("uModelCol", &self.material.diffuse);
                 shader.set_vec3("uCamPos", &camera.position);
             }
 

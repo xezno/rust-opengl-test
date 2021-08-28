@@ -181,4 +181,13 @@ impl Shader {
             gl::ProgramUniform3fv(self.program, location, 1, vec_ptr);
         }
     }
+
+    pub fn set_vec4(&mut self, name: &str, val: &glam::Vec4) -> () {
+        let location = self.get_location(name);
+
+        unsafe {
+            let vec_ptr: *const GLfloat = &val.to_array()[0];
+            gl::ProgramUniform4fv(self.program, location, 1, vec_ptr);
+        }
+    }
 }

@@ -12,6 +12,7 @@ extern crate sdl2;
 use glam::*;
 use imgui::{sys::*, FontConfig, FontSource};
 use render::{gfx::*, shader::Shader};
+use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
 use sdl2::sys::SDL_GL_SetAttribute;
 use util::{input::INPUT, screen::update_screen, time::update_time};
@@ -123,7 +124,7 @@ fn main() {
 
     gfx_setup(&mut window);
 
-    let mut camera = Camera::new();
+    let mut camera: Camera = OrbitCamera::new();
     let mut shader = Shader::new("content/shaders/standard.glsl");
     shader.scan_uniforms();
 

@@ -10,7 +10,7 @@ use serde_json::*;
 use std::fs;
 
 use super::{camera::Camera, model::Model, transform::Transform};
-use crate::render::shader::Shader;
+use crate::render::{material::Material, shader::Shader};
 
 #[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -29,14 +29,7 @@ pub struct Object {
     pub name: String,
     pub path: String,
     pub transform: Transform,
-}
-
-impl std::ops::Deref for Object {
-    type Target = Transform;
-
-    fn deref(&self) -> &Self::Target {
-        &self.transform
-    }
+    pub material: Material,
 }
 
 // This is what we use after we load the scene
@@ -61,6 +54,7 @@ impl Scene {
                     // Load model
                     let mut model = Model::new(object.path.as_str());
                     model.transform = object.transform;
+                    model.material = object.material;
                     loaded_scene.models.push(model);
                 }
                 _ => {
