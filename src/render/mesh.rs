@@ -13,6 +13,7 @@ use std::ptr;
 
 pub struct Mesh {
     pub vbo: GLuint,
+    pub vao: GLuint,
     pub vertex_count: GLint,
 }
 
@@ -20,12 +21,17 @@ impl Mesh {
     pub fn new(vertices: Vec<GLfloat>, normals: Vec<GLfloat>) -> Mesh {
         let mut model: Mesh = Mesh {
             vbo: 0,
+            vao: 0,
             vertex_count: (vertices.len() / 3) as GLint,
         };
 
         unsafe {
-            gl::CreateBuffers(1, &mut model.vbo);
+            gl::GenVertexArrays(1, &mut model.vao);
+            gl::GenBuffers(1, &mut model.vbo);
             gl::BindBuffer(gl::ARRAY_BUFFER, model.vbo);
+            gl::BindVertexArray(model.vao);
+
+            log::info!("Created VBO: {}", model.vbo);
 
             // Pack vertices & normals into single vec
             let mut gl_data: Vec<GLfloat> = Vec::new();
@@ -64,6 +70,9 @@ impl Mesh {
                 (3 * std::mem::size_of::<GLfloat>()) as *const c_void,
             );
             gl::EnableVertexAttribArray(1);
+
+            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+            gl::BindVertexArray(0);
         }
 
         return model;
@@ -72,7 +81,12 @@ impl Mesh {
     pub fn draw_this(&self) {
         unsafe {
             gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
+            gl::BindVertexArray(self.vao);
+
             gl::DrawArrays(gl::TRIANGLES, 0, self.vertex_count);
+
+            gl::BindVertexArray(0);
+            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
         }
     }
 }

@@ -8,7 +8,7 @@
       "name": "monkey 1",
       "path": "content/models/monkey.obj",
       "transform": {
-        "position": [2.0, 0.0, -1.0],
+        "position": [2.0, 0.0, 0.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
         "scale": [1.0, 1.0, 1.0]
       },
@@ -21,7 +21,7 @@
       "name": "monkey 2",
       "path": "content/models/monkey.obj",
       "transform": {
-        "position": [-2.0, 0.0, -1.0],
+        "position": [-2.0, 0.0, 0.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
         "scale": [1.0, 1.0, 1.0]
       },
@@ -41,6 +41,16 @@
       },
       "material": {
         "diffuse": [ 0.32, 0.87, 0.37, 1.0 ]
+      }
+    },
+
+    {
+      "type": "light",
+      "name": "directional light 1",
+      "transform": {
+        "position": [0.0, 0.0, 5.0],
+        "rotation": [ 0, -0.4871745, 0, -0.8733046 ],
+        "scale": [1.0, 1.0, 1.0]
       }
     }
   ]

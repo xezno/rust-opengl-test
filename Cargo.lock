@@ -348,6 +348,7 @@ dependencies = [
  "imgui",
  "imgui-opengl-renderer",
  "imgui-sdl2",
+ "log",
  "sdl2",
  "serde",
  "serde_derive",

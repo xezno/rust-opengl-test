@@ -17,11 +17,16 @@ use scene::{camera::Camera, scene::Scene};
 use sdl2::sys::SDL_GL_SetAttribute;
 use util::{input::INPUT, screen::update_screen, time::update_time};
 
+use crate::render::mesh::Mesh;
+use crate::scene::model::Model;
+
 pub mod render;
 pub mod scene;
 pub mod util;
 
 fn main() {
+    crate::util::logger::init();
+
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
 
@@ -132,10 +137,13 @@ fn main() {
     // Scene setup
     //
     let scene = Scene::new("content/scene.json");
-    let loaded_scene = scene.load();
+    let mut loaded_scene = scene.load();
 
     let mut event_pump = sdl.event_pump().unwrap();
     let mut last_time = std::time::Instant::now();
+
+    let mut cube = Model::new("content/models/cube.obj");
+    cube.transform.scale = vec3(0.1, 0.1, 0.1);
 
     'main: loop {
         //
@@ -213,6 +221,8 @@ fn main() {
         // Update
         //
         {
+            loaded_scene.update();
+            cube.transform.position = loaded_scene.light.position;
             camera.update(&ui);
         }
 
@@ -225,6 +235,8 @@ fn main() {
 
             imgui_sdl2.prepare_render(&ui, &window);
             imgui_renderer.render(ui);
+
+            cube.draw_this(&mut loaded_scene, &mut shader, &mut camera);
 
             window.gl_swap_window();
         }

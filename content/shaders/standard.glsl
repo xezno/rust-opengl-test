@@ -8,6 +8,13 @@ struct FS_IN {
   vec4 vScreenPos;
 };
 
+struct STRUCT_LIGHTING {
+  vec3 vLightPos;
+  vec3 vLightColor;
+};
+
+uniform STRUCT_LIGHTING lightingInfo;
+
 // ============================================================================
 //
 // Vertex shader
@@ -24,7 +31,7 @@ out FS_IN fs_in;
 
 void main() 
 {
-  fs_in.vWorldPos = inPos;
+  fs_in.vWorldPos = vec3( uModelMat * vec4( inPos, 1.0 ) );
   fs_in.vNormal = inNormal;
   fs_in.vScreenPos = uProjViewMat * uModelMat * vec4( inPos, 1.0 );
   
@@ -60,15 +67,14 @@ float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
 
 void main()
 {
-  //const vec3 color = vec3( 0.32, 0.37, 0.87 );
-  vec3 lightDir = normalize( vec3( 0.0, 1.0, 1.0 ) );
+  vec3 lightDir = normalize( lightingInfo.vLightPos - fs_in.vWorldPos);
   vec3 normal = normalize( fs_in.vNormal );
 
-  float lambertian = lambert( normal, lightDir );
-  float spec = specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), 64.0 ) * 2;
-  float ambient = 0.3;
+  vec3 lambertian = lambert( normal, lightDir ) * uModelCol.xyz;
+  vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), 64.0 ) * 2 ) * lightingInfo.vLightColor;
+  vec3 ambient = 0.4 * uModelCol.xyz;
 
-  vec3 lighting = uModelCol.xyz * ( lambertian + spec + ambient );
+  vec3 lighting = lambertian + spec + ambient;
 
   FragColor = vec4( lighting, 1.0 );
 } 

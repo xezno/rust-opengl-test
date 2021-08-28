@@ -10,7 +10,7 @@ use glam::*;
 
 use gl::types::*;
 
-use super::{camera::Camera, transform::Transform};
+use super::{camera::Camera, scene::LoadedScene, transform::Transform};
 use crate::render::{material::Material, mesh::Mesh, shader::Shader};
 
 pub struct Vertex {
@@ -35,7 +35,7 @@ impl Model {
             material: Material::default(),
         };
 
-        println!("Loading OBJ from '{}'", obj_path);
+        log::info!("Loading OBJ from '{}'", obj_path);
 
         let obj_file_contents = std::fs::read_to_string(obj_path).unwrap();
         let obj_file = wavefront_obj::obj::parse(obj_file_contents).unwrap();
@@ -68,7 +68,7 @@ impl Model {
                             indices.push(vertex_index);
                         }
                     } else {
-                        println!("unsupported non-triangle shape");
+                        log::warn!("unsupported non-triangle shape");
                     }
                 }
             }
@@ -93,7 +93,7 @@ impl Model {
         return model;
     }
 
-    pub fn draw_this(&self, shader: &mut Shader, camera: &mut Camera) {
+    pub fn draw_this(&self, scene: &LoadedScene, shader: &mut Shader, camera: &mut Camera) {
         for mesh in &self.meshes {
             shader.use_this();
             {
@@ -107,6 +107,10 @@ impl Model {
                 shader.set_mat4("uModelMat", &model_mat);
                 shader.set_vec4("uModelCol", &self.material.diffuse);
                 shader.set_vec3("uCamPos", &camera.position);
+
+                // Submit scene uniforms
+                shader.set_vec3("lightingInfo.vLightPos", &scene.light.position);
+                shader.set_vec3("lightingInfo.vLightColor", &scene.light.color);
             }
 
             mesh.draw_this();

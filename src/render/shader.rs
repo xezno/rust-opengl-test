@@ -99,9 +99,10 @@ impl Shader {
                 String::from_utf8(error_log).unwrap()
             );
         } else {
-            println!(
+            log::info!(
                 "Shader {} ('{}') compilation success",
-                shader_type, shader_path
+                shader_type,
+                shader_path
             );
         }
     }
@@ -134,9 +135,11 @@ impl Shader {
                 name_.set_len(name_length as usize);
                 let name = String::from_utf8(name_).unwrap();
 
-                println!(
+                log::info!(
                     "Shader {}, uniform: {}, location: {}",
-                    self.program, name, i
+                    self.program,
+                    name,
+                    i
                 );
 
                 if !self.program_uniforms.contains_key(&name) {
@@ -158,7 +161,8 @@ impl Shader {
         if self.program_uniforms.contains_key(name) {
             location = self.program_uniforms[name];
         } else {
-            panic!("Shader was never scanned for uniform {}", name);
+            log::warn!("Warn: Shader was never scanned for uniform {}", name);
+            location = -1;
         }
 
         return location;
