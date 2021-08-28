@@ -41,11 +41,20 @@ void main()
 
 in FS_IN fs_in;
 
+uniform vec3 uCamPos;
+
 out vec4 FragColor;
 
 float lambert( vec3 normal, vec3 lightDir ) 
 {
   return max( dot( normal, lightDir ), 0.0 );
+}
+
+float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
+{
+  vec3 reflectDir = reflect( -lightDir, normal );
+  float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), shininess );
+  return spec;
 }
 
 void main()
@@ -54,8 +63,13 @@ void main()
   vec3 normal = normalize( fs_in.vNormal );
 
   float lambertian = lambert( normal, lightDir ) + 0.1;
+  float spec = specular( normal, lightDir, normalize( fs_in.vWorldPos - uCamPos ), 4.0 );
 
-  FragColor = vec4( fs_in.vScreenPos.xyz * lambertian, 1.0 );
+  vec3 lighting = 
+    (fs_in.vScreenPos.xyz * lambertian) +
+    (vec3(1.0, 1.0, 1.0) * spec);
+
+  FragColor = vec4( lighting, 1.0 );
 } 
 
 #endif

@@ -106,6 +106,8 @@ impl Model {
                 model_mat *= Mat4::from_quat(self.transform.rotation);
 
                 shader.set_mat4("uModelMat", &model_mat);
+
+                shader.set_vec3("uCamPos", &camera.position);
             }
 
             mesh.draw_this();
