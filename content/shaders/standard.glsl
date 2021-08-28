@@ -67,10 +67,7 @@ void main()
   float spec = specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), 64.0 ) * 2;
   float ambient = 0.3;
 
-  vec3 lighting = 
-    ( color * lambertian ) +
-    ( color * spec ) +
-    ( color * ambient );
+  vec3 lighting = color * ( lambertian + spec + ambient );
 
   FragColor = vec4( lighting, 1.0 );
 } 

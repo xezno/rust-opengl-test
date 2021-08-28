@@ -74,7 +74,7 @@ impl Camera {
     }
 
     pub fn update(&mut self, ui: &Ui) {
-        self.rotate();
+        self.rotate(&ui);
 
         let yaw = self.euler_rot.x.to_radians();
         let pitch = self.euler_rot.y.to_radians();
@@ -125,9 +125,11 @@ impl Camera {
         self.set_position_calc_view_proj_mat(self.position);
     }
 
-    fn rotate(&mut self) {
+    fn rotate(&mut self, ui: &Ui) {
         unsafe {
             if INPUT.mouse.left {
+                ui.set_mouse_cursor(Some(MouseCursor::Hand));
+
                 self.euler_rot.x += INPUT.mouse.delta.x * 0.5;
                 self.euler_rot.y += INPUT.mouse.delta.y * 0.5;
             } else {
