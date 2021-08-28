@@ -9,7 +9,7 @@
 use crate::camera::Camera;
 use crate::mesh::Mesh;
 use crate::shader::Shader;
-use crate::transform::{self, Transform};
+use crate::transform::Transform;
 
 use glam::*;
 

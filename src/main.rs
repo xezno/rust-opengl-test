@@ -41,19 +41,7 @@ fn main() {
     let _gl = gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
     let _viewport = gl::Viewport::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
 
-    unsafe {
-        let mut major = -1;
-        gl::GetIntegerv(gl::MAJOR_VERSION, &mut major);
-
-        let mut minor = -1;
-        gl::GetIntegerv(gl::MINOR_VERSION, &mut minor);
-
-        window
-            .set_title(format!("My Game, OpenGL {}.{}", major, minor).as_str())
-            .unwrap();
-    }
-
-    gfx_setup();
+    gfx_setup(&mut window);
 
     //
     // Scene setup
@@ -61,15 +49,13 @@ fn main() {
     let scene = Scene::new("content/scene.json");
     let loaded_scene = scene.load();
 
-    // Create camera
     let mut camera = Camera::new();
-
-    // Create triangle
     let mut shader = Shader::new("content/shaders/standard.glsl");
     shader.scan_uniforms();
 
-    // let model = Model::new("content/models/monkey.obj");
     let mut event_pump = sdl.event_pump().unwrap();
+
+    let mut last_time = std::time::Instant::now();
 
     'main: loop {
         //
@@ -80,8 +66,6 @@ fn main() {
                 break 'main;
             }
 
-            // TODO: Proper time delta
-            update_time(0.005);
             camera.update();
         }
 
@@ -90,10 +74,17 @@ fn main() {
         //
         {
             gfx_clear();
-            // model.draw_this(&mut shader, &mut camera);
             loaded_scene.draw_this(&mut shader, &mut camera);
             window.gl_swap_window();
         }
+
+        let mut delta = std::time::Instant::now()
+            .duration_since(last_time)
+            .as_millis() as f32;
+        delta /= 1000.0;
+        update_time(delta);
+
+        last_time = std::time::Instant::now();
     }
 }
 

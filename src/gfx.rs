@@ -6,8 +6,18 @@
 //
 // ============================================================================
 
-pub fn gfx_setup() {
+pub fn gfx_setup(window: &mut sdl2::video::Window) {
     unsafe {
+        let mut major = -1;
+        gl::GetIntegerv(gl::MAJOR_VERSION, &mut major);
+
+        let mut minor = -1;
+        gl::GetIntegerv(gl::MINOR_VERSION, &mut minor);
+
+        window
+            .set_title(format!("My Game, OpenGL {}.{}", major, minor).as_str())
+            .unwrap();
+
         gl::Enable(gl::DEPTH_TEST);
     }
 

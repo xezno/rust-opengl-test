@@ -53,7 +53,7 @@ void main()
   vec3 lightDir = vec3( 0.0, 0.0, 1.0 );
   vec3 normal = normalize( fs_in.vNormal );
 
-  float lambertian = lambert( normal, lightDir );
+  float lambertian = lambert( normal, lightDir ) + 0.1;
 
   FragColor = vec4( fs_in.vScreenPos.xyz * lambertian, 1.0 );
 } 
