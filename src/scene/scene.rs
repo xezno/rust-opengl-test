@@ -8,7 +8,7 @@
 
 use glam::Vec3;
 use imgui::{im_str, ColorPicker, Condition, Ui, Window};
-use log::info;
+use log::{info, warn};
 use serde_json::*;
 use std::fs;
 
@@ -33,6 +33,7 @@ pub struct Object {
     pub path: Option<String>,
     pub transform: Transform,
     pub material: Option<Material>,
+    pub phys: Option<String>,
 }
 
 pub struct Light {
@@ -67,13 +68,26 @@ impl Scene {
                     model.transform = object.transform;
                     model.material = object.material.unwrap();
                     loaded_scene.models.push(model);
+
+                    if object.phys.is_some() {
+                        let phys_val = object.phys.as_ref().unwrap();
+
+                        info!("Creating phys {}", phys_val);
+                        match phys_val.as_str() {
+                            "cuboid" => {}
+                            "ball" => {}
+                            _ => {
+                                warn!("Unsupported phystype {}", phys_val);
+                            }
+                        }
+                    }
                 }
                 "light" => {
                     info!("Scene: loading light");
                     loaded_scene.light.position = object.transform.position;
                 }
                 _ => {
-                    panic!("Unsupported object type {}", object.type_field);
+                    warn!("Unsupported objtype {}", object.type_field);
                 }
             }
         }

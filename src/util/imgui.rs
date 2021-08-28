@@ -10,8 +10,6 @@ pub fn imgui_init() -> imgui::Context {
     // Imgui setup
     //
     let mut io = imgui.io_mut();
-    io.display_size = [1280.0, 720.0];
-    update_screen(IVec2::new(1280, 720));
 
     let font_data = include_bytes!("../../content/fonts/Roboto-Regular.ttf");
     imgui.fonts().add_font(&[FontSource::TtfData {

@@ -40,12 +40,16 @@ fn main() {
         );
     }
 
+    let win_size = uvec2(1600, 900);
+
     let mut window = video_subsystem
-        .window("", 1280, 720)
+        .window("", win_size.x, win_size.y)
         .opengl()
         .resizable()
         .build()
         .unwrap();
+
+    update_screen(win_size.as_i32());
 
     let _gl_context = window.gl_create_context().unwrap();
 
@@ -98,6 +102,8 @@ fn main() {
                     // Mouse
                     //
                     sdl2::event::Event::MouseMotion { x, y, .. } => unsafe {
+                        // TODO: Work out why this shits the bed when you move the mouse quickly
+
                         let delta = vec2(
                             (x - INPUT.mouse.position.x) as f32,
                             (y - INPUT.mouse.position.y) as f32,
@@ -130,7 +136,9 @@ fn main() {
                     //
                     sdl2::event::Event::Quit { .. } => break 'main,
                     sdl2::event::Event::Window { win_event, .. } => match win_event {
-                        sdl2::event::WindowEvent::Resized(w, h) => {
+                        // sdl2::event::WindowEvent::Resized(w, h) => {
+                        // }
+                        sdl2::event::WindowEvent::SizeChanged(w, h) => {
                             gfx_resize(w, h);
                             update_screen(IVec2::new(w, h));
                         }
