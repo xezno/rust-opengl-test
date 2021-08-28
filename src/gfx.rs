@@ -18,15 +18,12 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
             .set_title(format!("My Game, OpenGL {}.{}", major, minor).as_str())
             .unwrap();
 
+        gl::ClipControl(gl::LOWER_LEFT, gl::ZERO_TO_ONE);
+        gl::ClearColor(0.34, 0.12, 0.56, 1.0);
+
+        gl::ClearDepth(0.0);
         gl::Enable(gl::DEPTH_TEST);
-    }
-
-    gfx_clear_color(0.34, 0.12, 0.56, 1.0);
-}
-
-pub fn gfx_clear_color(red: f32, green: f32, blue: f32, alpha: f32) {
-    unsafe {
-        gl::ClearColor(red, green, blue, alpha);
+        gl::DepthFunc(gl::GREATER);
     }
 }
 

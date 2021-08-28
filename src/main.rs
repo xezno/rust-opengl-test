@@ -9,19 +9,23 @@
 extern crate gl;
 extern crate sdl2;
 
-pub mod camera;
-pub mod gfx;
-pub mod mesh;
-pub mod model;
-pub mod scene;
-pub mod shader;
+pub mod screen;
 pub mod time;
 pub mod transform;
+
+pub mod gfx;
+pub mod mesh;
+pub mod shader;
+
+pub mod camera;
+pub mod model;
+pub mod scene;
 
 use camera::Camera;
 use gfx::*;
 use glam::*;
 use scene::Scene;
+use screen::*;
 use shader::Shader;
 use time::*;
 
@@ -41,7 +45,13 @@ fn main() {
     let _gl = gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
     let _viewport = gl::Viewport::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
 
+    update_screen(IVec2::new(1280, 720));
+
     gfx_setup(&mut window);
+
+    let mut camera = Camera::new();
+    let mut shader = Shader::new("content/shaders/standard.glsl");
+    shader.scan_uniforms();
 
     //
     // Scene setup
@@ -49,12 +59,7 @@ fn main() {
     let scene = Scene::new("content/scene.json");
     let loaded_scene = scene.load();
 
-    let mut camera = Camera::new();
-    let mut shader = Shader::new("content/shaders/standard.glsl");
-    shader.scan_uniforms();
-
     let mut event_pump = sdl.event_pump().unwrap();
-
     let mut last_time = std::time::Instant::now();
 
     'main: loop {
@@ -78,6 +83,9 @@ fn main() {
             window.gl_swap_window();
         }
 
+        //
+        // Timings
+        //
         let mut delta = std::time::Instant::now()
             .duration_since(last_time)
             .as_millis() as f32;
