@@ -63,6 +63,36 @@
     },
 
     {
+      "type": "model",
+      "name": "Left Ball",
+      "path": "content/models/sphere.obj",
+      "transform": {
+        "position": [-1.0, 0.0, -2.0],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [0.2, 0.2, 0.2]
+      },
+      "material": {
+        "diffuse": [ 0.85, 0.65, 0.12, 1.0 ],
+        "specular": 128
+      }
+    },
+
+    {
+      "type": "model",
+      "name": "Right Ball",
+      "path": "content/models/sphere.obj",
+      "transform": {
+        "position": [1.0, 0.0, -2.0],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [0.2, 0.2, 0.2]
+      },
+      "material": {    
+        "diffuse": [ 0.12, 0.65, 0.85, 1.0 ],
+        "specular": 128
+      }
+    },
+
+    {
       "type": "light",
       "name": "directional light 1",
       "transform": {

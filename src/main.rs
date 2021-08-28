@@ -193,12 +193,14 @@ fn main() {
         //
         // Timings
         //
-        let mut delta = std::time::Instant::now()
-            .duration_since(last_time)
-            .as_millis() as f32;
-        delta /= 1000.0;
-        update_time(delta);
+        {
+            let mut delta = std::time::Instant::now()
+                .duration_since(last_time)
+                .as_millis() as f32;
+            delta /= 1000.0;
+            update_time(delta);
 
-        last_time = std::time::Instant::now();
+            last_time = std::time::Instant::now();
+        }
     }
 }
