@@ -194,4 +194,12 @@ impl Shader {
             gl::ProgramUniform4fv(self.program, location, 1, vec_ptr);
         }
     }
+
+    pub(crate) fn set_f32(&mut self, name: &str, val: f32) -> () {
+        let location = self.get_location(name);
+
+        unsafe {
+            gl::ProgramUniform1f(self.program, location, val);
+        }
+    }
 }

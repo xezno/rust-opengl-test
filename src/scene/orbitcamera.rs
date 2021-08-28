@@ -140,6 +140,12 @@ impl OrbitCamera for Camera {
 
         let right = forward.cross(up);
 
+        Window::new(im_str!("Orbit camera Debug")).build(&ui, || {
+            ui.text(format!("Forward: {}", forward));
+            ui.text(format!("Up: {}", up));
+            ui.text(format!("Right: {}", right));
+        });
+
         unsafe {
             if INPUT.mouse.right {
                 ui.set_mouse_cursor(Some(MouseCursor::Hand));
@@ -158,7 +164,7 @@ impl OrbitCamera for Camera {
                 self.euler_rot.x += INPUT.mouse.delta.x * 0.25;
                 self.euler_rot.y += INPUT.mouse.delta.y * 0.25;
             } else {
-                self.euler_rot.y = self.euler_rot.y.lerp(0.0, 10.0 * TIME.delta);
+                // self.euler_rot.y = self.euler_rot.y.lerp(0.0, 10.0 * TIME.delta);
             }
         }
 

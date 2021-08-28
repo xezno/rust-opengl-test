@@ -8,11 +8,17 @@ struct FS_IN {
   vec4 vScreenPos;
 };
 
+struct STRUCT_MATERIAL {
+  float fSpecular;
+  vec4 vDiffuseCol;
+};
+
 struct STRUCT_LIGHTING {
   vec3 vLightPos;
   vec3 vLightColor;
 };
 
+uniform STRUCT_MATERIAL materialInfo;
 uniform STRUCT_LIGHTING lightingInfo;
 
 // ============================================================================
@@ -49,7 +55,6 @@ void main()
 in FS_IN fs_in;
 
 uniform vec3 uCamPos;
-uniform vec4 uModelCol;
 
 out vec4 FragColor;
 
@@ -70,13 +75,20 @@ void main()
   vec3 lightDir = normalize( lightingInfo.vLightPos - fs_in.vWorldPos);
   vec3 normal = normalize( fs_in.vNormal );
 
-  vec3 lambertian = lambert( normal, lightDir ) * uModelCol.xyz;
-  vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), 64.0 ) * 2 ) * lightingInfo.vLightColor;
-  vec3 ambient = 0.4 * uModelCol.xyz;
+  vec3 lambertian = lambert( normal, lightDir ) * materialInfo.vDiffuseCol.xyz;
+  vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), materialInfo.fSpecular ) * 2 ) * lightingInfo.vLightColor;
+  vec3 ambient = 0.4 * materialInfo.vDiffuseCol.xyz;
 
-  vec3 lighting = lambertian + spec + ambient;
+  if ( materialInfo.fSpecular <= 0 )
+  {
+    spec = vec3( 0.0 );
+  }
 
-  FragColor = vec4( lighting, 1.0 );
+  vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;// * normalize( lightingInfo.vLightColor );
+
+  lighting += ambient* normalize( lightingInfo.vLightColor );
+
+  FragColor = vec4( pow( lighting, vec3( 2.2 ) ), 1.0 );
 } 
 
 #endif

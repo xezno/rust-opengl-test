@@ -13,7 +13,8 @@
         "scale": [1.0, 1.0, 1.0]
       },
       "material": {
-        "diffuse": [ 0.32, 0.37, 0.87, 1.0 ]
+        "diffuse": [ 0.32, 0.37, 0.87, 1.0 ],
+        "specular": 32
       }
     },
     {
@@ -26,7 +27,8 @@
         "scale": [1.0, 1.0, 1.0]
       },
       "material": {
-        "diffuse": [ 0.87, 0.37, 0.32, 1.0 ]
+        "diffuse": [ 0.87, 0.37, 0.32, 1.0 ],
+        "specular": 32
       }
     },
 
@@ -40,7 +42,23 @@
         "scale": [1.0, 1.0, 1.0]
       },
       "material": {
-        "diffuse": [ 0.32, 0.87, 0.37, 1.0 ]
+        "diffuse": [ 0.32, 0.87, 0.37, 1.0 ],
+        "specular": 32
+      }
+    },
+
+    {
+      "type": "model",
+      "name": "floor",
+      "path": "content/models/cube.obj",
+      "transform": {
+        "position": [0.0, 0.0, -4.0],
+        "rotation": [ 0, 0, 0, 1 ],
+        "scale": [20.0, 20.0, 0.1]
+      },
+      "material": {
+        "diffuse": [ 0.32, 0.32, 0.32, 1.0 ],
+        "specular": 0
       }
     },
 

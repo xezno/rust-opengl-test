@@ -105,12 +105,15 @@ impl Model {
                 // Submit shader uniforms
                 shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
                 shader.set_mat4("uModelMat", &model_mat);
-                shader.set_vec4("uModelCol", &self.material.diffuse);
                 shader.set_vec3("uCamPos", &camera.position);
 
                 // Submit scene uniforms
                 shader.set_vec3("lightingInfo.vLightPos", &scene.light.position);
                 shader.set_vec3("lightingInfo.vLightColor", &scene.light.color);
+
+                // Submit material uniforms
+                shader.set_f32("materialInfo.fSpecular", self.material.specular);
+                shader.set_vec4("materialInfo.vDiffuseCol", &self.material.diffuse);
             }
 
             mesh.draw_this();

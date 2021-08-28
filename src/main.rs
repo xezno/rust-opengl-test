@@ -14,6 +14,7 @@ use render::{gfx::*, shader::Shader};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
 use sdl2::sys::SDL_GL_SetAttribute;
+use util::screen::get_screen;
 use util::{input::INPUT, screen::update_screen, time::update_time};
 
 use crate::scene::model::Model;
@@ -23,7 +24,7 @@ pub mod scene;
 pub mod util;
 
 fn main() {
-    crate::util::logger::init();
+    crate::util::logger::init().expect("Wasn't able to start logger");
 
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
@@ -151,7 +152,7 @@ fn main() {
         // Update
         //
         {
-            loaded_scene.update();
+            loaded_scene.update(&ui);
             cube.transform.position = loaded_scene.light.position;
             camera.update(&ui);
         }
@@ -160,15 +161,33 @@ fn main() {
         // Render
         //
         {
-            gfx_clear();
-            loaded_scene.draw_this(&mut shader, &mut camera);
+            // Shadow pass
+            {
+                gfx_clear();
+                gfx_resize(2048, 2048);
+            }
 
-            imgui_sdl2.prepare_render(&ui, &window);
-            imgui_renderer.render(ui);
+            // Main render pass
+            {
+                gfx_clear();
+                gfx_resize(get_screen().size.x, get_screen().size.y);
 
-            cube.draw_this(&mut loaded_scene, &mut shader, &mut camera);
+                unsafe {
+                    gl::Enable(gl::FRAMEBUFFER_SRGB);
+                }
 
-            window.gl_swap_window();
+                loaded_scene.draw_this(&mut shader, &mut camera);
+                cube.draw_this(&mut loaded_scene, &mut shader, &mut camera);
+
+                unsafe {
+                    gl::Disable(gl::FRAMEBUFFER_SRGB);
+                }
+
+                imgui_sdl2.prepare_render(&ui, &window);
+                imgui_renderer.render(ui);
+
+                window.gl_swap_window();
+            }
         }
 
         //

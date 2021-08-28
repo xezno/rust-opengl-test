@@ -7,6 +7,7 @@
 // ============================================================================
 
 use glam::Vec3;
+use imgui::{im_str, ColorPicker, Condition, Ui, Window};
 use log::info;
 use serde_json::*;
 use std::fs;
@@ -98,8 +99,19 @@ impl LoadedScene {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, ui: &Ui) {
         let time = crate::util::time::get_time().total;
+
+        Window::new(im_str!("Lighting Debug"))
+            .size([300.0, 110.0], Condition::FirstUseEver)
+            .build(&ui, || {
+                let mut color: [f32; 3] = self.light.color.into();
+                let color_picker = ColorPicker::new(im_str!("Light Color"), &mut color);
+
+                if color_picker.build(&ui) {
+                    self.light.color = color.into();
+                }
+            });
 
         let position = Vec3::new(time.sin() * 2.0, time.cos() * 2.0, time.sin() * 2.0);
         self.light.position = position;

@@ -14,10 +14,14 @@ use glam::Vec4;
 #[serde(rename_all = "camelCase")]
 pub struct Material {
     pub diffuse: Vec4,
+    pub specular: f32,
 }
 
 impl Material {
     pub fn new() -> Material {
-        Material { diffuse: Vec4::ONE }
+        Material {
+            diffuse: Vec4::ONE,
+            specular: 0f32,
+        }
     }
 }
