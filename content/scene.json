@@ -8,7 +8,7 @@
       "name": "monkey 1",
       "path": "content/models/monkey.obj",
       "transform": {
-        "position": [2.0, 0.0, 0.0],
+        "position": [2.0, 0.0, -1.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
         "scale": [1.0, 1.0, 1.0]
       }
@@ -18,7 +18,7 @@
       "name": "monkey 2",
       "path": "content/models/monkey.obj",
       "transform": {
-        "position": [-2.0, 0.0, 0.0],
+        "position": [-2.0, 0.0, -1.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
         "scale": [1.0, 1.0, 1.0]
       }
@@ -29,7 +29,7 @@
       "name": "monkey 3",
       "path": "content/models/monkey.obj",
       "transform": {
-        "position": [0.0, 0.0, 2.0],
+        "position": [0.0, 0.0, 1.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
         "scale": [1.0, 1.0, 1.0]
       }

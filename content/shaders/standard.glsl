@@ -59,11 +59,12 @@ float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
 
 void main()
 {
-  vec3 lightDir = vec3( 0.0, 0.0, 1.0 );
+  vec3 lightDir = vec3( 0.0, 0.0, -1.0 );
   vec3 normal = normalize( fs_in.vNormal );
 
-  float lambertian = lambert( normal, lightDir ) + 0.1;
-  float spec = specular( normal, lightDir, normalize( fs_in.vWorldPos - uCamPos ), 64.0 );
+  float lambertian = 1.0 - ( lambert( normal, lightDir ) + 0.1 );
+  lambertian += 0.1;
+  float spec = specular( normal, lightDir, normalize( fs_in.vWorldPos - uCamPos ), 128.0 ) * 4;
 
   vec3 lighting = 
     (vec3(0.23,0.37,0.87) * lambertian) +

@@ -19,11 +19,19 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
             .unwrap();
 
         gl::ClipControl(gl::LOWER_LEFT, gl::ZERO_TO_ONE);
-        gl::ClearColor(0.34, 0.12, 0.56, 1.0);
+
+        let col = crate::color::from_rgb(100, 149, 237); // cornflower blue
+        gl::ClearColor(col.0, col.1, col.2, 1.0);
 
         gl::ClearDepth(0.0);
         gl::Enable(gl::DEPTH_TEST);
         gl::DepthFunc(gl::GREATER);
+    }
+}
+
+pub fn gfx_resize(w: i32, h: i32) {
+    unsafe {
+        gl::Viewport(0, 0, w, h);
     }
 }
 

@@ -7,12 +7,19 @@
 // ============================================================================
 
 use glam::*;
+use imgui::*;
+
+use crate::{input::INPUT, lerp::Lerp, time::TIME};
 
 pub struct Camera {
     pub position: Vec3,
     pub rotation: Quat,
 
+    pub euler_rot: Vec3,
+
     pub fov: f32,
+    wish_fov: f32,
+
     pub z_near: f32,
     pub z_far: f32,
 
@@ -22,8 +29,9 @@ pub struct Camera {
     pub proj_view_mat: Mat4,
 
     orbit_distance: f32,
-    height: f32,
 }
+
+// const EULER_ROT: EulerRot = EulerRot::XYZ;
 
 impl Camera {
     pub fn new() -> Camera {
@@ -32,7 +40,11 @@ impl Camera {
             position: Vec3::new(0.0, -1.0, 0.0),
             rotation: Quat::IDENTITY,
 
-            fov: 45.0,
+            euler_rot: Vec3::new(0.0, 0.0, 0.0),
+
+            fov: 60.0,
+            wish_fov: 60.0,
+
             z_near: 0.01,
             z_far: 100.0,
 
@@ -40,9 +52,7 @@ impl Camera {
             proj_mat: Mat4::IDENTITY,
 
             proj_view_mat: Mat4::IDENTITY,
-
             orbit_distance: 5.0,
-            height: 2.0,
         };
 
         cam.calc_view_proj_mat();
@@ -60,16 +70,62 @@ impl Camera {
         self.calc_view_proj_mat();
     }
 
-    pub fn update(&mut self) {
-        // sine
-        let time = crate::time::get_time();
-        let sin_time = (time.total).sin();
-        let cos_time = (time.total).cos();
+    pub fn update(&mut self, ui: &Ui) {
+        self.rotate();
 
-        let x = sin_time * self.orbit_distance;
-        let y = cos_time * self.orbit_distance;
+        let yaw = self.euler_rot.x.to_radians();
+        let pitch = self.euler_rot.y.to_radians();
 
-        self.set_position_calc_view_proj_mat(Vec3::new(x, y, self.height));
+        unsafe {
+            Window::new(im_str!("Camera Debug"))
+                .size([300.0, 110.0], Condition::FirstUseEver)
+                .build(&ui, || {
+                    ui.text(format!("Mouse pos: {}", INPUT.mouse.position));
+                    ui.text(format!("Mouse delta: {}", INPUT.mouse.delta));
+
+                    // ui.text(format!("Camera pos: {:.1}", self.position));
+                    // ui.text(format!(
+                    //     "Camera rot euler: {}",
+                    //     serde_json::to_string(&self.eulerRot).unwrap()
+                    // ));
+
+                    ui.text(format!("Camera fov: {:.1}", self.fov));
+                    ui.text(format!("Camera wish fov: {:.1}", self.wish_fov));
+
+                    ui.text(format!("Pitch, yaw: {:.1} {:.1}", pitch, yaw));
+                });
+        }
+
+        unsafe {
+            // Set position
+            self.wish_fov -= INPUT.mouse.wheel * 5.0;
+            self.wish_fov = self.wish_fov.clamp(20f32, 110f32);
+
+            self.fov = self.fov.lerp(self.wish_fov, TIME.delta * 10.0);
+            self.fov = self.fov.clamp(20f32, 110f32);
+        }
+
+        self.position = vec3(
+            yaw.sin() * pitch.cos() * self.orbit_distance,
+            yaw.cos() * pitch.cos() * self.orbit_distance,
+            pitch.sin() * self.orbit_distance,
+        );
+
+        self.set_position_calc_view_proj_mat(self.position);
+    }
+
+    fn rotate(&mut self) {
+        unsafe {
+            if INPUT.mouse.left {
+                self.euler_rot.x += INPUT.mouse.delta.x * 0.5;
+                self.euler_rot.y += INPUT.mouse.delta.y * 0.5;
+            } else {
+                self.euler_rot.y = self.euler_rot.y.lerp(0.0, 10.0 * TIME.delta);
+            }
+        }
+
+        self.euler_rot.y %= 360.0;
+        self.euler_rot.y = self.euler_rot.y.clamp(-89f32, 89f32);
     }
 
     // TODO: Floating point depth buffer

@@ -180,7 +180,7 @@ impl Shader {
 
         unsafe {
             let vec_ptr: *const GLfloat = &val.to_array()[0];
-            gl::ProgramUniformMatrix3fv(self.program, location, 1, gl::FALSE, vec_ptr);
+            gl::ProgramUniform3fv(self.program, location, 1, vec_ptr);
         }
     }
 }

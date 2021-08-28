@@ -5,23 +5,13 @@
 // Purpose: Keeps track of time.
 //
 // ============================================================================
-
+#[derive(Copy, Clone)]
 pub struct Time {
     pub total: f32,
     pub delta: f32,
 }
 
-impl Clone for Time {
-    fn clone(&self) -> Self {
-        Self {
-            total: self.total.clone(),
-            delta: self.delta.clone(),
-        }
-    }
-}
-impl Copy for Time {}
-
-static mut TIME: Time = Time {
+pub static mut TIME: Time = Time {
     total: 0.0,
     delta: 0.0,
 };

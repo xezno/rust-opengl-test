@@ -21,14 +21,20 @@ pub mod camera;
 pub mod model;
 pub mod scene;
 
+pub mod input;
+pub mod lerp;
+
+pub mod color;
+
 use camera::Camera;
 use gfx::*;
 use glam::*;
-use imgui::{im_str, Condition, Window};
 use scene::Scene;
 use screen::*;
 use shader::Shader;
 use time::*;
+
+use crate::input::INPUT;
 
 fn main() {
     let sdl = sdl2::init().unwrap();
@@ -77,9 +83,15 @@ fn main() {
 
     'main: loop {
         //
-        // Update
+        // Input
         //
         {
+            // Reset input
+            unsafe {
+                INPUT.mouse.delta = vec2(0.0, 0.0);
+                INPUT.mouse.wheel = 0.0;
+            }
+
             for event in event_pump.poll_iter() {
                 imgui_sdl2.handle_event(&mut imgui, &event);
                 if imgui_sdl2.ignore_event(&event) {
@@ -88,11 +100,59 @@ fn main() {
 
                 match event {
                     sdl2::event::Event::Quit { .. } => break 'main,
+                    sdl2::event::Event::MouseMotion { x, y, .. } => unsafe {
+                        let delta = vec2(
+                            (x - INPUT.mouse.position.x) as f32,
+                            (y - INPUT.mouse.position.y) as f32,
+                        );
+
+                        INPUT.mouse.delta = delta;
+                        INPUT.mouse.position = IVec2::new(x, y);
+                    },
+                    sdl2::event::Event::MouseButtonDown { mouse_btn, .. } => unsafe {
+                        match mouse_btn {
+                            sdl2::mouse::MouseButton::Unknown => {}
+                            sdl2::mouse::MouseButton::Left => INPUT.mouse.left = true,
+                            sdl2::mouse::MouseButton::Middle => {}
+                            sdl2::mouse::MouseButton::Right => INPUT.mouse.right = true,
+                            sdl2::mouse::MouseButton::X1 => {}
+                            sdl2::mouse::MouseButton::X2 => {}
+                        }
+                    },
+                    sdl2::event::Event::MouseButtonUp { mouse_btn, .. } => unsafe {
+                        match mouse_btn {
+                            sdl2::mouse::MouseButton::Unknown => {}
+                            sdl2::mouse::MouseButton::Left => INPUT.mouse.left = false,
+                            sdl2::mouse::MouseButton::Middle => {}
+                            sdl2::mouse::MouseButton::Right => INPUT.mouse.right = false,
+                            sdl2::mouse::MouseButton::X1 => {}
+                            sdl2::mouse::MouseButton::X2 => {}
+                        }
+                    },
+
+                    sdl2::event::Event::MouseWheel { y, .. } => unsafe {
+                        INPUT.mouse.wheel = y as f32;
+                    },
+
+                    sdl2::event::Event::Window { win_event, .. } => match win_event {
+                        sdl2::event::WindowEvent::Resized(w, h) => {
+                            gfx_resize(w, h);
+                        }
+                        _ => {}
+                    },
                     _ => {}
                 }
             }
+        }
 
-            camera.update();
+        imgui_sdl2.prepare_frame(imgui.io_mut(), &window, &event_pump.mouse_state());
+        let ui = imgui.frame();
+
+        //
+        // Update
+        //
+        {
+            camera.update(&ui);
         }
 
         //
@@ -101,23 +161,6 @@ fn main() {
         {
             gfx_clear();
             loaded_scene.draw_this(&mut shader, &mut camera);
-
-            imgui_sdl2.prepare_frame(imgui.io_mut(), &window, &event_pump.mouse_state());
-
-            let ui = imgui.frame();
-
-            Window::new(im_str!("Hello world"))
-                .size([300.0, 110.0], Condition::FirstUseEver)
-                .build(&ui, || {
-                    ui.text(im_str!("Hello world!"));
-                    ui.text(im_str!(":mitarejoice:"));
-                    ui.separator();
-                    let mouse_pos = ui.io().mouse_pos;
-                    ui.text(format!(
-                        "Mouse Position: ({:.1},{:.1})",
-                        mouse_pos[0], mouse_pos[1]
-                    ));
-                });
 
             imgui_sdl2.prepare_render(&ui, &window);
             imgui_renderer.render(ui);
