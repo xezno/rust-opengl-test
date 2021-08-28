@@ -6,10 +6,11 @@
 //
 // ============================================================================
 
+use serde_json::*;
 use std::fs;
 
-use crate::{camera::Camera, model::Model, shader::Shader, transform::Transform};
-use serde_json::*;
+use super::{camera::Camera, model::Model, transform::Transform};
+use crate::render::shader::Shader;
 
 #[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all = "camelCase")]

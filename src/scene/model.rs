@@ -6,14 +6,12 @@
 //
 // ============================================================================
 
-use crate::camera::Camera;
-use crate::mesh::Mesh;
-use crate::shader::Shader;
-use crate::transform::Transform;
-
 use glam::*;
 
 use gl::types::*;
+
+use super::{camera::Camera, transform::Transform};
+use crate::render::{mesh::Mesh, shader::Shader};
 
 pub struct Vertex {
     pub position: Vec3,

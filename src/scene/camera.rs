@@ -9,7 +9,7 @@
 use glam::*;
 use imgui::*;
 
-use crate::{input::INPUT, lerp::Lerp, time::TIME};
+use crate::util::{input::INPUT, lerp::Lerp, screen::get_screen, time::TIME};
 
 pub struct Camera {
     pub position: Vec3,
@@ -140,7 +140,7 @@ impl Camera {
     }
 
     fn calc_view_proj_mat(&mut self) {
-        let screen_size = crate::screen::get_screen().size;
+        let screen_size = get_screen().size;
         let aspect_ratio = (screen_size.x as f32) / (screen_size.y as f32);
 
         self.view_mat = Mat4::look_at_rh(self.position, Vec3::ZERO, Vec3::Z);

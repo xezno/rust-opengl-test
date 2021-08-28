@@ -20,7 +20,7 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
 
         gl::ClipControl(gl::LOWER_LEFT, gl::ZERO_TO_ONE);
 
-        let col = crate::color::from_rgb(100, 149, 237); // cornflower blue
+        let col = crate::render::color::from_rgb(100, 149, 237); // cornflower blue
         gl::ClearColor(col.0, col.1, col.2, 1.0);
 
         gl::ClearDepth(0.0);

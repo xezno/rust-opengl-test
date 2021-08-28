@@ -10,8 +10,6 @@ use std::convert::TryInto;
 use std::fs;
 use std::ptr;
 
-use crate::gfx::gfx_check_generic_errors;
-
 use gl::types::*;
 use std::collections::HashMap;
 
@@ -58,7 +56,7 @@ impl Shader {
             gl::AttachShader(program, vertex);
             gl::AttachShader(program, fragment);
 
-            gfx_check_generic_errors();
+            crate::render::gfx::gfx_check_generic_errors();
 
             gl::LinkProgram(program);
 

@@ -1,3 +1,8 @@
+use glam::*;
+use render::{gfx::*, shader::Shader};
+use scene::{camera::Camera, scene::Scene};
+use util::{input::INPUT, screen::update_screen, time::update_time};
+
 // ============================================================================
 //
 // main.rs
@@ -9,32 +14,9 @@
 extern crate gl;
 extern crate sdl2;
 
-pub mod screen;
-pub mod time;
-pub mod transform;
-
-pub mod gfx;
-pub mod mesh;
-pub mod shader;
-
-pub mod camera;
-pub mod model;
+pub mod render;
 pub mod scene;
-
-pub mod input;
-pub mod lerp;
-
-pub mod color;
-
-use camera::Camera;
-use gfx::*;
-use glam::*;
-use scene::Scene;
-use screen::*;
-use shader::Shader;
-use time::*;
-
-use crate::input::INPUT;
+pub mod util;
 
 fn main() {
     let sdl = sdl2::init().unwrap();
