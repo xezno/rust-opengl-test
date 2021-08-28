@@ -26,6 +26,8 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
         gl::ClearDepth(0.0);
         gl::Enable(gl::DEPTH_TEST);
         gl::DepthFunc(gl::GREATER);
+
+        gl::Enable(gl::MULTISAMPLE);
     }
 }
 

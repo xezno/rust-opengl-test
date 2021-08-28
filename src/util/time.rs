@@ -5,6 +5,7 @@
 // Purpose: Keeps track of time.
 //
 // ============================================================================
+
 #[derive(Copy, Clone)]
 pub struct Time {
     pub total: f32,

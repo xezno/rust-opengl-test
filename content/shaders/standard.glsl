@@ -59,16 +59,18 @@ float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
 
 void main()
 {
-  vec3 lightDir = vec3( 0.0, 0.0, -1.0 );
+  const vec3 color = vec3( 0.32, 0.37, 0.87 );
+  vec3 lightDir = normalize( vec3( 0.0, 1.0, 1.0 ) );
   vec3 normal = normalize( fs_in.vNormal );
 
-  float lambertian = 1.0 - ( lambert( normal, lightDir ) + 0.1 );
-  lambertian += 0.1;
-  float spec = specular( normal, lightDir, normalize( fs_in.vWorldPos - uCamPos ), 128.0 ) * 4;
+  float lambertian = lambert( normal, lightDir );
+  float spec = specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), 64.0 ) * 2;
+  float ambient = 0.3;
 
   vec3 lighting = 
-    (vec3(0.23,0.37,0.87) * lambertian) +
-    (vec3(0.23,0.37,0.87) * spec);
+    ( color * lambertian ) +
+    ( color * spec ) +
+    ( color * ambient );
 
   FragColor = vec4( lighting, 1.0 );
 } 

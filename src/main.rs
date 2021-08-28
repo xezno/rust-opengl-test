@@ -1,8 +1,3 @@
-use glam::*;
-use render::{gfx::*, shader::Shader};
-use scene::{camera::Camera, scene::Scene};
-use util::{input::INPUT, screen::update_screen, time::update_time};
-
 // ============================================================================
 //
 // main.rs
@@ -14,6 +9,12 @@ use util::{input::INPUT, screen::update_screen, time::update_time};
 extern crate gl;
 extern crate sdl2;
 
+use glam::*;
+use render::{gfx::*, shader::Shader};
+use scene::{camera::Camera, scene::Scene};
+use sdl2::sys::SDL_GL_SetAttribute;
+use util::{input::INPUT, screen::update_screen, time::update_time};
+
 pub mod render;
 pub mod scene;
 pub mod util;
@@ -21,6 +22,17 @@ pub mod util;
 fn main() {
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
+
+    unsafe {
+        assert_eq!(
+            0,
+            SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_MULTISAMPLEBUFFERS, 1)
+        );
+        assert_eq!(
+            0,
+            SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_MULTISAMPLESAMPLES, 4)
+        );
+    }
 
     let mut window = video_subsystem
         .window("", 1280, 720)
@@ -81,7 +93,9 @@ fn main() {
                 }
 
                 match event {
-                    sdl2::event::Event::Quit { .. } => break 'main,
+                    //
+                    // Mouse
+                    //
                     sdl2::event::Event::MouseMotion { x, y, .. } => unsafe {
                         let delta = vec2(
                             (x - INPUT.mouse.position.x) as f32,
@@ -93,22 +107,16 @@ fn main() {
                     },
                     sdl2::event::Event::MouseButtonDown { mouse_btn, .. } => unsafe {
                         match mouse_btn {
-                            sdl2::mouse::MouseButton::Unknown => {}
                             sdl2::mouse::MouseButton::Left => INPUT.mouse.left = true,
-                            sdl2::mouse::MouseButton::Middle => {}
                             sdl2::mouse::MouseButton::Right => INPUT.mouse.right = true,
-                            sdl2::mouse::MouseButton::X1 => {}
-                            sdl2::mouse::MouseButton::X2 => {}
+                            _ => {}
                         }
                     },
                     sdl2::event::Event::MouseButtonUp { mouse_btn, .. } => unsafe {
                         match mouse_btn {
-                            sdl2::mouse::MouseButton::Unknown => {}
                             sdl2::mouse::MouseButton::Left => INPUT.mouse.left = false,
-                            sdl2::mouse::MouseButton::Middle => {}
                             sdl2::mouse::MouseButton::Right => INPUT.mouse.right = false,
-                            sdl2::mouse::MouseButton::X1 => {}
-                            sdl2::mouse::MouseButton::X2 => {}
+                            _ => {}
                         }
                     },
 
@@ -116,12 +124,21 @@ fn main() {
                         INPUT.mouse.wheel = y as f32;
                     },
 
+                    //
+                    // Window
+                    //
+                    sdl2::event::Event::Quit { .. } => break 'main,
                     sdl2::event::Event::Window { win_event, .. } => match win_event {
                         sdl2::event::WindowEvent::Resized(w, h) => {
                             gfx_resize(w, h);
+                            update_screen(IVec2::new(w, h));
                         }
                         _ => {}
                     },
+
+                    //
+                    //
+                    //
                     _ => {}
                 }
             }
