@@ -100,19 +100,18 @@ impl OrbitCamera for Camera {
 
         unsafe {
             // Set position
-            self.wish_fov -= INPUT.mouse.wheel * 5.0;
-            self.wish_fov = self.wish_fov.clamp(50f32, 110f32);
+            // self.wish_fov -= INPUT.mouse.wheel * 5.0;
+            // self.wish_fov = self.wish_fov.clamp(50f32, 110f32);
 
-            self.fov = self.fov.lerp(self.wish_fov, TIME.delta * 10.0);
-            self.fov = self.fov.clamp(50f32, 110f32);
+            // self.fov = self.fov.lerp(self.wish_fov, TIME.delta * 10.0);
+            // self.fov = self.fov.clamp(50f32, 110f32);
 
             self.wish_orbit_distance -= INPUT.mouse.wheel * 2.0;
-            self.wish_orbit_distance = self.wish_orbit_distance.clamp(4.0, 5.0);
+            self.wish_orbit_distance = self.wish_orbit_distance.clamp(0.0, 100000.0);
 
             self.orbit_distance = self
                 .orbit_distance
                 .lerp(self.wish_orbit_distance, TIME.delta * 10.0);
-            self.orbit_distance = self.orbit_distance.clamp(4.0, 5.0);
         }
 
         self.position = self.look_at

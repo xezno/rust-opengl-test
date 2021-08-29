@@ -9,12 +9,10 @@
 extern crate gl;
 extern crate sdl2;
 
-use std::ffi::c_void;
-use std::ptr;
-
-use gl::types::{GLfloat, GLsizei, GLsizeiptr, GLuint};
+use gl::types::GLuint;
 use glam::*;
-use imgui::sys::{igGetContentRegionAvail, igImage, igSetNextItemWidth, ImVec2, ImVec4};
+use imgui::sys::{igGetContentRegionAvail, igSetNextItemWidth, ImVec2};
+use imgui::{Image, TextureId};
 use render::{gfx::*, shader::Shader};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
@@ -24,53 +22,6 @@ use util::{input::INPUT, screen::update_screen, time::update_time};
 pub mod render;
 pub mod scene;
 pub mod util;
-
-// ( VAO, VBO )
-fn quad_setup() -> (GLuint, GLuint) {
-    let mut vao: GLuint = 0;
-    let mut vbo: GLuint = 0;
-
-    #[rustfmt::skip]
-    let quad_verts: [f32; 20] = [
-        -1.0,  1.0, 0.0, 0.0, 1.0,
-        -1.0, -1.0, 0.0, 0.0, 0.0,
-        1.0,  1.0, 0.0, 1.0, 1.0,
-        1.0, -1.0, 0.0, 1.0, 0.0,
-    ];
-
-    unsafe {
-        gl::GenVertexArrays(1, &mut vao);
-        gl::GenBuffers(1, &mut vbo);
-        gl::BindVertexArray(vao);
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (quad_verts.len() * std::mem::size_of::<f32>()) as GLsizeiptr,
-            &quad_verts[0] as *const GLfloat as *const c_void,
-            gl::STATIC_DRAW,
-        );
-        let stride = (5 * std::mem::size_of::<GLfloat>()) as GLsizei;
-        gl::EnableVertexAttribArray(0);
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, ptr::null());
-        gl::EnableVertexAttribArray(1);
-        gl::VertexAttribPointer(
-            1,
-            2,
-            gl::FLOAT,
-            gl::FALSE,
-            stride,
-            (3 * std::mem::size_of::<GLfloat>()) as *const c_void,
-        );
-    }
-
-    return (vao, vbo);
-}
-
-unsafe fn quad_render(vao: GLuint) {
-    gl::BindVertexArray(vao);
-    gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 4);
-    gl::BindVertexArray(0);
-}
 
 fn main() {
     crate::util::logger::init().expect("Wasn't able to start logger");
@@ -119,7 +70,7 @@ fn main() {
     let mut g_position: GLuint = 0;
     let mut g_normal: GLuint = 0;
     let mut g_color_spec: GLuint = 0;
-    let g_buffer = gfx_setup_gbuffer(&mut g_position, &mut g_normal, &mut g_color_spec);
+    let mut g_buffer = gfx_setup_gbuffer(&mut g_position, &mut g_normal, &mut g_color_spec);
 
     let mut camera: Camera = OrbitCamera::new();
     let mut gbuffer_shader = Shader::new("content/shaders/gbuffer.glsl");
@@ -128,15 +79,11 @@ fn main() {
     lighting_shader.scan_uniforms();
 
     //
-    // Quad
-    //
-    let (quad_vao, quad_vbo) = quad_setup();
-
-    //
     // Scene setup
     //
     let scene = Scene::new("content/scene.json");
     let mut loaded_scene = scene.load();
+    let quad_vao = gfx_quad_setup();
 
     let mut event_pump = sdl.event_pump().unwrap();
     let mut last_time = std::time::Instant::now();
@@ -202,6 +149,13 @@ fn main() {
                         sdl2::event::WindowEvent::SizeChanged(w, h) => {
                             gfx_resize(w, h);
                             update_screen(IVec2::new(w, h));
+
+                            // HACK? Resize gbuffers
+                            g_buffer = gfx_setup_gbuffer(
+                                &mut g_position,
+                                &mut g_normal,
+                                &mut g_color_spec,
+                            );
                         }
                         _ => {}
                     },
@@ -240,7 +194,7 @@ fn main() {
                         gl::COLOR_ATTACHMENT1,
                         gl::COLOR_ATTACHMENT2,
                     ];
-                    gl::ClearColor(0.0, 0.0, 0.0, 1.0);
+                    gl::ClearColor(0.0, 0.0, 0.0, 0.0);
                     gl::DrawBuffers(3, &attachments[0]);
                 }
                 gfx_bind_framebuffer(g_buffer);
@@ -249,18 +203,17 @@ fn main() {
                 loaded_scene.draw_this(&mut gbuffer_shader, &mut camera);
             }
 
-            // Main render pass
+            // Main lighting pass
             {
                 unsafe {
                     gl::Disable(gl::DEPTH_TEST);
 
-                    // Cornflower blue as hex
+                    // TODO: Proper skyboxes
                     let col = crate::render::color::from_hex("#6495ED");
-                    gl::ClearColor(col.0, col.1, col.2, 1.0);
+                    gl::ClearColor(col.0, col.1, col.2, 0.0);
                 }
                 gfx_bind_framebuffer(0);
                 gfx_clear();
-                // gfx_resize(get_screen().size.x, get_screen().size.y);
 
                 unsafe {
                     gl::Enable(gl::FRAMEBUFFER_SRGB);
@@ -292,7 +245,7 @@ fn main() {
                     lighting_shader.set_vec3("lightingInfo.vLightColor", &loaded_scene.light.color);
 
                     // Render quad
-                    quad_render(quad_vao);
+                    gfx_quad_render(quad_vao);
 
                     gl::Disable(gl::FRAMEBUFFER_SRGB);
                 }
@@ -302,41 +255,31 @@ fn main() {
             {
                 imgui_sdl2.prepare_render(&ui, &window);
 
+                let mut size: ImVec2 = ImVec2::new(0.0, 0.0);
                 unsafe {
                     igSetNextItemWidth(-1.0);
-                    let mut size: ImVec2 = ImVec2::new(0.0, 0.0);
                     igGetContentRegionAvail(&mut size);
-
-                    let aspect = size.y / 900.0;
-                    size.y = size.x * aspect;
-
-                    igImage(
-                        g_position as *mut c_void,
-                        size,
-                        ImVec2::new(0.0, 1.0),
-                        ImVec2::new(1.0, 0.0),
-                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
-                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
-                    );
-
-                    igImage(
-                        g_normal as *mut c_void,
-                        size,
-                        ImVec2::new(0.0, 1.0),
-                        ImVec2::new(1.0, 0.0),
-                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
-                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
-                    );
-
-                    igImage(
-                        g_color_spec as *mut c_void,
-                        size,
-                        ImVec2::new(0.0, 1.0),
-                        ImVec2::new(1.0, 0.0),
-                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
-                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
-                    );
                 }
+
+                let aspect = size.y / 900.0;
+                size.y = size.x * aspect;
+
+                let size_arr = [size.x, size.y];
+
+                Image::new(TextureId::new(g_position as usize), size_arr)
+                    .uv0([0.0, 1.0])
+                    .uv1([1.0, 0.0])
+                    .build(&ui);
+
+                Image::new(TextureId::new(g_normal as usize), size_arr)
+                    .uv0([0.0, 1.0])
+                    .uv1([1.0, 0.0])
+                    .build(&ui);
+
+                Image::new(TextureId::new(g_color_spec as usize), size_arr)
+                    .uv0([0.0, 1.0])
+                    .uv1([1.0, 0.0])
+                    .build(&ui);
                 imgui_renderer.render(ui);
             }
             window.gl_swap_window();

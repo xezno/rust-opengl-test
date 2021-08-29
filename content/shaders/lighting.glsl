@@ -77,18 +77,18 @@ void main()
 {
   // retrieve data from G-buffer
   vec3 FragPos = texture(gPosition, fs_in.vTexCoords).rgb;
-  vec3 Normal = texture(gNormal, fs_in.vTexCoords).rgb;
+  vec4 Normal = texture(gNormal, fs_in.vTexCoords);
   vec3 Albedo = texture(gColorSpec, fs_in.vTexCoords).rgb;
   float Specular = texture(gColorSpec, fs_in.vTexCoords).a;
   
-  if ( Normal == vec3(0.0, 0.0, 0.0) )
+  if ( Normal.w == 0.0 )
     discard;
   
   vec3 lightDir = normalize( lightingInfo.vLightDir );
-  vec3 normal = normalize( fs_in.vNormal );
+  vec3 normal = normalize( Normal.xyz );
 
-  vec3 lambertian = lambert( Normal, lightDir ) * Albedo;
-  vec3 spec = ( specular( Normal, lightDir, normalize( uCamPos - FragPos ), Specular ) ) * lightingInfo.vLightColor;
+  vec3 lambertian = lambert( normal, lightDir ) * Albedo;
+  vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - FragPos ), Specular * 512.0 ) ) * lightingInfo.vLightColor;
   vec3 ambient = 0.4 * Albedo;
 
   if ( Specular <= 0 )

@@ -57,16 +57,16 @@ in FS_IN fs_in;
 uniform vec3 uCamPos;
 
 layout (location = 0) out vec4 gPosition;
-layout (location = 1) out vec3 gNormal;
+layout (location = 1) out vec4 gNormal;
 layout (location = 2) out vec4 gColorSpec;
 
 void main()
 {
     gPosition = fs_in.vScreenPos;
-    gNormal = fs_in.vNormal;
+    gNormal = vec4( fs_in.vNormal, 1.0 );
 
     gColorSpec.rgb = materialInfo.vDiffuseCol.rgb;
-    gColorSpec.a = materialInfo.fSpecular;
+    gColorSpec.a = materialInfo.fSpecular / 512.0;
 }
 
 #endif

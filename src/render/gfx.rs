@@ -5,7 +5,9 @@
 // Purpose: Graphics helpers
 //
 // ============================================================================
-use gl::types::GLuint;
+
+use gl::types::*;
+use std::{ffi::c_void, ptr};
 
 pub fn gfx_setup(window: &mut sdl2::video::Window) {
     unsafe {
@@ -163,4 +165,50 @@ pub fn gfx_setup_gbuffer(
     }
 
     return g_buffer;
+}
+
+pub fn gfx_quad_setup() -> GLuint {
+    let mut vao: GLuint = 0;
+    let mut vbo: GLuint = 0;
+
+    #[rustfmt::skip]
+    let quad_verts: [f32; 20] = [
+        -1.0,  1.0, 0.0,    0.0, 1.0,
+        -1.0, -1.0, 0.0,    0.0, 0.0,
+        1.0,  1.0, 0.0,     1.0, 1.0,
+        1.0, -1.0, 0.0,     1.0, 0.0,
+    ];
+
+    unsafe {
+        gl::GenVertexArrays(1, &mut vao);
+        gl::GenBuffers(1, &mut vbo);
+        gl::BindVertexArray(vao);
+        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+        gl::BufferData(
+            gl::ARRAY_BUFFER,
+            (quad_verts.len() * std::mem::size_of::<f32>()) as GLsizeiptr,
+            &quad_verts[0] as *const GLfloat as *const c_void,
+            gl::STATIC_DRAW,
+        );
+        let stride = (5 * std::mem::size_of::<GLfloat>()) as GLsizei;
+        gl::EnableVertexAttribArray(0);
+        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, ptr::null());
+        gl::EnableVertexAttribArray(1);
+        gl::VertexAttribPointer(
+            1,
+            2,
+            gl::FLOAT,
+            gl::FALSE,
+            stride,
+            (3 * std::mem::size_of::<GLfloat>()) as *const c_void,
+        );
+    }
+
+    return vao;
+}
+
+pub unsafe fn gfx_quad_render(vao: GLuint) {
+    gl::BindVertexArray(vao);
+    gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 4);
+    gl::BindVertexArray(0);
 }

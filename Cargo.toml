@@ -3,8 +3,6 @@ name = "rust-opengl-test"
 version = "0.1.0"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 sdl2 = { version = "0.34.5", features = [ "bundled", "static-link" ] }
 wavefront_obj = "10.0.0"

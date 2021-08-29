@@ -14,7 +14,7 @@
       },
       "material": {
         "diffuse": [ 0.32, 0.37, 0.87, 1.0 ],
-        "specular": 32
+        "specular": 4
       }
     },
     {
@@ -28,7 +28,7 @@
       },
       "material": {
         "diffuse": [ 0.87, 0.37, 0.32, 1.0 ],
-        "specular": 32
+        "specular": 0
       }
     },
 
@@ -43,7 +43,7 @@
       },
       "material": {
         "diffuse": [ 0.32, 0.87, 0.37, 1.0 ],
-        "specular": 32
+        "specular": 128
       }
     },
 
@@ -58,7 +58,7 @@
       },
       "material": {
         "diffuse": [ 0.87, 0.32, 0.37, 1.0 ],
-        "specular": 32
+        "specular": 512
       }
     },
 

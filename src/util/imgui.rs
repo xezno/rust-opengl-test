@@ -13,7 +13,7 @@ pub fn imgui_init() -> imgui::Context {
         size_pixels: 14.0,
     }]);
 
-    // let style = imgui.style_mut();
+    // MESS AHEAD
     imgui.style_mut().colors[ImGuiCol_Text as usize] = [1.00, 1.00, 1.00, 1.00];
     imgui.style_mut().colors[ImGuiCol_TextDisabled as usize] = [0.50, 0.50, 0.50, 1.00];
     imgui.style_mut().colors[ImGuiCol_WindowBg as usize] = [0.13, 0.14, 0.15, 1.00];
