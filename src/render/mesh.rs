@@ -18,7 +18,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn new(vertices: Vec<GLfloat>, normals: Vec<GLfloat>) -> Mesh {
+    pub fn new(vertices: Vec<GLfloat>, normals: Vec<GLfloat>, texcoords: Vec<GLfloat>) -> Mesh {
         let mut model: Mesh = Mesh {
             vbo: 0,
             vao: 0,
@@ -43,6 +43,9 @@ impl Mesh {
                 gl_data.push(normals[i * 3]);
                 gl_data.push(normals[i * 3 + 1]);
                 gl_data.push(normals[i * 3 + 2]);
+
+                gl_data.push(texcoords[i * 2]);
+                gl_data.push(texcoords[i * 2 + 1]);
             }
 
             // Buffer data
@@ -53,7 +56,7 @@ impl Mesh {
                 gl::STATIC_DRAW,
             );
 
-            let stride = (6 * std::mem::size_of::<GLfloat>()) as GLsizei;
+            let stride = (8 * std::mem::size_of::<GLfloat>()) as GLsizei;
 
             // Attributes
             // Position
@@ -70,6 +73,17 @@ impl Mesh {
                 (3 * std::mem::size_of::<GLfloat>()) as *const c_void,
             );
             gl::EnableVertexAttribArray(1);
+
+            // Texture Coordinates
+            gl::VertexAttribPointer(
+                2,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                stride,
+                (6 * std::mem::size_of::<GLfloat>()) as *const c_void,
+            );
+            gl::EnableVertexAttribArray(2);
 
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
             gl::BindVertexArray(0);

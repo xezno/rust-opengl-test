@@ -6,7 +6,7 @@
 //
 // ============================================================================
 
-use glam::Vec3;
+use glam::{Quat, Vec3};
 use imgui::{im_str, ColorPicker, Condition, Ui, Window};
 use log::{info, warn};
 use serde_json::*;
@@ -37,7 +37,7 @@ pub struct Object {
 }
 
 pub struct Light {
-    pub position: Vec3,
+    pub direction: Quat,
     pub color: Vec3,
 }
 
@@ -84,7 +84,7 @@ impl Scene {
                 }
                 "light" => {
                     info!("Scene: loading light");
-                    loaded_scene.light.position = object.transform.position;
+                    loaded_scene.light.direction = object.transform.rotation;
                 }
                 _ => {
                     warn!("Unsupported objtype {}", object.type_field);
@@ -102,7 +102,7 @@ impl LoadedScene {
             models: Vec::new(),
             light: Light {
                 color: Vec3::new(1.0, 1.0, 1.0),
-                position: Vec3::new(0.0, 0.0, 0.0),
+                direction: Quat::IDENTITY,
             },
         }
     }
@@ -114,8 +114,6 @@ impl LoadedScene {
     }
 
     pub fn update(&mut self, ui: &Ui) {
-        let time = crate::util::time::get_time().total;
-
         Window::new(im_str!("Lighting Debug"))
             .size([300.0, 110.0], Condition::FirstUseEver)
             .build(&ui, || {
@@ -125,9 +123,28 @@ impl LoadedScene {
                 if color_picker.build(&ui) {
                     self.light.color = color.into();
                 }
-            });
 
-        let position = Vec3::new(time.sin() * 2.0, time.cos() * 2.0, time.sin() * 2.0);
-        self.light.position = position;
+                let mut direction: (f32, f32, f32) =
+                    self.light.direction.to_euler(glam::EulerRot::XYZ);
+                direction.0 = direction.0.to_degrees();
+                direction.1 = direction.1.to_degrees();
+                direction.2 = direction.2.to_degrees();
+
+                let mut direction_array = [direction.0, direction.1, direction.2];
+
+                if ui
+                    .input_float3(im_str!("Direction"), &mut direction_array)
+                    .build()
+                {
+                    self.light.direction = Quat::from_euler(
+                        glam::EulerRot::XYZ,
+                        direction_array[0].to_radians(),
+                        direction_array[1].to_radians(),
+                        direction_array[2].to_radians(),
+                    );
+                }
+
+                ui.text(im_str!("{:?}", self.light.direction));
+            });
     }
 }

@@ -6,6 +6,7 @@ struct FS_IN {
   vec3 vWorldPos;
   vec3 vNormal;
   vec4 vScreenPos;
+  vec2 vTexCoords;
 };
 
 struct STRUCT_MATERIAL {
@@ -28,7 +29,7 @@ uniform STRUCT_LIGHTING lightingInfo;
 #ifdef VERTEX
 
 layout(location = 0) in vec3 inPos;
-layout(location = 1) in vec3 inNormal;
+layout(location = 1) in vec3 inTexCoords;
 
 uniform mat4 uModelMat;
 uniform mat4 uProjViewMat;
@@ -37,9 +38,8 @@ out FS_IN fs_in;
 
 void main() 
 {
-  fs_in.vWorldPos = vec3( uModelMat * vec4( inPos, 1.0 ) );
-  fs_in.vNormal = inNormal;
-  fs_in.vScreenPos = uProjViewMat * uModelMat * vec4( inPos, 1.0 );
+  fs_in.vScreenPos = vec4( inPos, 1.0 );
+  fs_in.vTexCoords = inTexCoords.xy;
   
   gl_Position = fs_in.vScreenPos;
 }
@@ -56,8 +56,11 @@ in FS_IN fs_in;
 
 uniform vec3 uCamPos;
 
-out vec4 FragColor;
+uniform sampler2D gPosition;
+uniform sampler2D gNormal;
+uniform sampler2D gColorSpec;
 
+out vec4 FragColor;
 float lambert( vec3 normal, vec3 lightDir ) 
 {
   return max( dot( normal, lightDir ), 0.0 );
@@ -68,27 +71,36 @@ float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
   vec3 reflectDir = reflect( -lightDir, normal );
   float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), shininess );
   return spec;
-}
+} 
 
 void main()
 {
-  vec3 lightDir = normalize( lightingInfo.vLightDir ); //normalize( lightingInfo.vLightPos - fs_in.vWorldPos);
+  // retrieve data from G-buffer
+  vec3 FragPos = texture(gPosition, fs_in.vTexCoords).rgb;
+  vec3 Normal = texture(gNormal, fs_in.vTexCoords).rgb;
+  vec3 Albedo = texture(gColorSpec, fs_in.vTexCoords).rgb;
+  float Specular = texture(gColorSpec, fs_in.vTexCoords).a;
+  
+  if ( Normal == vec3(0.0, 0.0, 0.0) )
+    discard;
+  
+  vec3 lightDir = normalize( lightingInfo.vLightDir );
   vec3 normal = normalize( fs_in.vNormal );
 
-  vec3 lambertian = lambert( normal, lightDir ) * materialInfo.vDiffuseCol.xyz;
-  vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), materialInfo.fSpecular ) ) * lightingInfo.vLightColor;
-  vec3 ambient = 0.4 * materialInfo.vDiffuseCol.xyz;
+  vec3 lambertian = lambert( Normal, lightDir ) * Albedo;
+  vec3 spec = ( specular( Normal, lightDir, normalize( uCamPos - FragPos ), Specular ) ) * lightingInfo.vLightColor;
+  vec3 ambient = 0.4 * Albedo;
 
-  if ( materialInfo.fSpecular <= 0 )
+  if ( Specular <= 0 )
   {
     spec = vec3( 0.0 );
   }
 
-  vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;// * normalize( lightingInfo.vLightColor );
-
+  vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;
   lighting += ambient * normalize( lightingInfo.vLightColor );
 
-  FragColor = vec4( pow( lighting, vec3( 2.2 ) ), 1.0 );
+  lighting = pow( lighting, vec3( 2.2 ) );
+  FragColor = vec4( lighting, 1.0);
 } 
 
 #endif

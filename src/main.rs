@@ -9,19 +9,68 @@
 extern crate gl;
 extern crate sdl2;
 
+use std::ffi::c_void;
+use std::ptr;
+
+use gl::types::{GLfloat, GLsizei, GLsizeiptr, GLuint};
 use glam::*;
+use imgui::sys::{igGetContentRegionAvail, igImage, igSetNextItemWidth, ImVec2, ImVec4};
 use render::{gfx::*, shader::Shader};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
 use sdl2::sys::SDL_GL_SetAttribute;
-use util::screen::get_screen;
 use util::{input::INPUT, screen::update_screen, time::update_time};
-
-use crate::scene::model::Model;
 
 pub mod render;
 pub mod scene;
 pub mod util;
+
+// ( VAO, VBO )
+fn quad_setup() -> (GLuint, GLuint) {
+    let mut vao: GLuint = 0;
+    let mut vbo: GLuint = 0;
+
+    #[rustfmt::skip]
+    let quad_verts: [f32; 20] = [
+        -1.0,  1.0, 0.0, 0.0, 1.0,
+        -1.0, -1.0, 0.0, 0.0, 0.0,
+        1.0,  1.0, 0.0, 1.0, 1.0,
+        1.0, -1.0, 0.0, 1.0, 0.0,
+    ];
+
+    unsafe {
+        gl::GenVertexArrays(1, &mut vao);
+        gl::GenBuffers(1, &mut vbo);
+        gl::BindVertexArray(vao);
+        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+        gl::BufferData(
+            gl::ARRAY_BUFFER,
+            (quad_verts.len() * std::mem::size_of::<f32>()) as GLsizeiptr,
+            &quad_verts[0] as *const GLfloat as *const c_void,
+            gl::STATIC_DRAW,
+        );
+        let stride = (5 * std::mem::size_of::<GLfloat>()) as GLsizei;
+        gl::EnableVertexAttribArray(0);
+        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, ptr::null());
+        gl::EnableVertexAttribArray(1);
+        gl::VertexAttribPointer(
+            1,
+            2,
+            gl::FLOAT,
+            gl::FALSE,
+            stride,
+            (3 * std::mem::size_of::<GLfloat>()) as *const c_void,
+        );
+    }
+
+    return (vao, vbo);
+}
+
+unsafe fn quad_render(vao: GLuint) {
+    gl::BindVertexArray(vao);
+    gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 4);
+    gl::BindVertexArray(0);
+}
 
 fn main() {
     crate::util::logger::init().expect("Wasn't able to start logger");
@@ -64,9 +113,24 @@ fn main() {
 
     gfx_setup(&mut window);
 
+    //
+    // Gbuf setup
+    //
+    let mut g_position: GLuint = 0;
+    let mut g_normal: GLuint = 0;
+    let mut g_color_spec: GLuint = 0;
+    let g_buffer = gfx_setup_gbuffer(&mut g_position, &mut g_normal, &mut g_color_spec);
+
     let mut camera: Camera = OrbitCamera::new();
-    let mut shader = Shader::new("content/shaders/standard.glsl");
-    shader.scan_uniforms();
+    let mut gbuffer_shader = Shader::new("content/shaders/gbuffer.glsl");
+    gbuffer_shader.scan_uniforms();
+    let mut lighting_shader = Shader::new("content/shaders/lighting.glsl");
+    lighting_shader.scan_uniforms();
+
+    //
+    // Quad
+    //
+    let (quad_vao, quad_vbo) = quad_setup();
 
     //
     // Scene setup
@@ -76,9 +140,6 @@ fn main() {
 
     let mut event_pump = sdl.event_pump().unwrap();
     let mut last_time = std::time::Instant::now();
-
-    let mut cube = Model::new("content/models/cube.obj");
-    cube.transform.scale = vec3(0.1, 0.1, 0.1);
 
     'main: loop {
         //
@@ -161,7 +222,6 @@ fn main() {
         //
         {
             loaded_scene.update(&ui);
-            cube.transform.position = loaded_scene.light.position;
             camera.update(&ui);
         }
 
@@ -169,33 +229,117 @@ fn main() {
         // Render
         //
         {
-            // Shadow pass
+            // Geo pass
             {
+                unsafe {
+                    // gl::ClearDepth(0.0);
+                    gl::Enable(gl::DEPTH_TEST);
+                    // gl::DepthFunc(gl::GREATER);
+                    let attachments = [
+                        gl::COLOR_ATTACHMENT0,
+                        gl::COLOR_ATTACHMENT1,
+                        gl::COLOR_ATTACHMENT2,
+                    ];
+                    gl::ClearColor(0.0, 0.0, 0.0, 1.0);
+                    gl::DrawBuffers(3, &attachments[0]);
+                }
+                gfx_bind_framebuffer(g_buffer);
                 gfx_clear();
-                gfx_resize(2048, 2048);
+                // Bind gbuffer shader
+                loaded_scene.draw_this(&mut gbuffer_shader, &mut camera);
             }
 
             // Main render pass
             {
+                unsafe {
+                    gl::Disable(gl::DEPTH_TEST);
+
+                    // Cornflower blue as hex
+                    let col = crate::render::color::from_hex("#6495ED");
+                    gl::ClearColor(col.0, col.1, col.2, 1.0);
+                }
+                gfx_bind_framebuffer(0);
                 gfx_clear();
-                gfx_resize(get_screen().size.x, get_screen().size.y);
+                // gfx_resize(get_screen().size.x, get_screen().size.y);
 
                 unsafe {
                     gl::Enable(gl::FRAMEBUFFER_SRGB);
-                }
 
-                loaded_scene.draw_this(&mut shader, &mut camera);
-                cube.draw_this(&mut loaded_scene, &mut shader, &mut camera);
+                    // Bind lighting pass shader
+                    lighting_shader.use_this();
 
-                unsafe {
+                    // Bind gbuffer textures
+                    gl::ActiveTexture(gl::TEXTURE0);
+                    gl::BindTexture(gl::TEXTURE_2D, g_position);
+                    gl::ActiveTexture(gl::TEXTURE1);
+                    gl::BindTexture(gl::TEXTURE_2D, g_normal);
+                    gl::ActiveTexture(gl::TEXTURE2);
+                    gl::BindTexture(gl::TEXTURE_2D, g_color_spec);
+
+                    lighting_shader.set_int("gPosition", 0);
+                    lighting_shader.set_int("gNormal", 1);
+                    lighting_shader.set_int("gColorSpec", 2);
+
+                    // Submit scene uniforms
+                    lighting_shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
+                    lighting_shader.set_vec3("uCamPos", &camera.position);
+
+                    // Set lighting uniforms
+                    lighting_shader.set_vec3(
+                        "lightingInfo.vLightDir",
+                        &loaded_scene.light.direction.to_euler(EulerRot::XYZ).into(),
+                    );
+                    lighting_shader.set_vec3("lightingInfo.vLightColor", &loaded_scene.light.color);
+
+                    // Render quad
+                    quad_render(quad_vao);
+
                     gl::Disable(gl::FRAMEBUFFER_SRGB);
                 }
-
-                imgui_sdl2.prepare_render(&ui, &window);
-                imgui_renderer.render(ui);
-
-                window.gl_swap_window();
             }
+
+            // Draw imgui
+            {
+                imgui_sdl2.prepare_render(&ui, &window);
+
+                unsafe {
+                    igSetNextItemWidth(-1.0);
+                    let mut size: ImVec2 = ImVec2::new(0.0, 0.0);
+                    igGetContentRegionAvail(&mut size);
+
+                    let aspect = size.y / 900.0;
+                    size.y = size.x * aspect;
+
+                    igImage(
+                        g_position as *mut c_void,
+                        size,
+                        ImVec2::new(0.0, 1.0),
+                        ImVec2::new(1.0, 0.0),
+                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
+                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
+                    );
+
+                    igImage(
+                        g_normal as *mut c_void,
+                        size,
+                        ImVec2::new(0.0, 1.0),
+                        ImVec2::new(1.0, 0.0),
+                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
+                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
+                    );
+
+                    igImage(
+                        g_color_spec as *mut c_void,
+                        size,
+                        ImVec2::new(0.0, 1.0),
+                        ImVec2::new(1.0, 0.0),
+                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
+                        ImVec4::new(1.0, 1.0, 1.0, 1.0),
+                    );
+                }
+                imgui_renderer.render(ui);
+            }
+            window.gl_swap_window();
         }
 
         //

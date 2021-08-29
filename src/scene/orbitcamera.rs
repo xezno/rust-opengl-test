@@ -93,7 +93,7 @@ impl OrbitCamera for Camera {
                     ui.text(format!("Pitch, yaw: {:.1} {:.1}", pitch, yaw));
 
                     if ui.button(im_str!("Reset look at"), [0.0, 0.0]) {
-                        self.look_at = Vec3::new(0.0, -1.0, 0.0);
+                        self.look_at = Vec3::new(0.0, 0.0, 0.0);
                     }
                 });
         }
@@ -164,7 +164,9 @@ impl OrbitCamera for Camera {
                 self.euler_rot.x += INPUT.mouse.delta.x * 0.25;
                 self.euler_rot.y += INPUT.mouse.delta.y * 0.25;
             } else {
-                // self.euler_rot.y = self.euler_rot.y.lerp(0.0, 10.0 * TIME.delta);
+                // Uncomment for snapping
+                // self.euler_rot.x = self.euler_rot.x.lerp(0.0, 5.0 * TIME.delta);
+                // self.euler_rot.y = self.euler_rot.y.lerp(0.0, 5.0 * TIME.delta);
             }
         }
 
@@ -188,9 +190,10 @@ impl OrbitCamera for Camera {
         let aspect_ratio = (screen_size.x as f32) / (screen_size.y as f32);
 
         self.view_mat = Mat4::look_at_rh(self.position, self.look_at, Vec3::Z);
+
+        // Camera::create_perspective_reversed_z(self.fov.to_radians(), aspect_ratio, self.z_near);
         self.proj_mat =
-            Camera::create_perspective_reversed_z(self.fov.to_radians(), aspect_ratio, self.z_near);
-        // Mat4::perspective_rh(self.fov.to_radians(), aspect_ratio, self.z_near, self.z_far);
+            Mat4::perspective_rh(self.fov.to_radians(), aspect_ratio, self.z_near, self.z_far);
 
         self.proj_view_mat = self.proj_mat * self.view_mat;
     }

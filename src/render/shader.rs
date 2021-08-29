@@ -161,7 +161,8 @@ impl Shader {
         if self.program_uniforms.contains_key(name) {
             location = self.program_uniforms[name];
         } else {
-            log::warn!("Warn: Shader was never scanned for uniform {}", name);
+            // Suppress for now
+            // log::warn!("Warn: Shader was never scanned for uniform {}", name);
             location = -1;
         }
 
@@ -195,11 +196,19 @@ impl Shader {
         }
     }
 
-    pub(crate) fn set_f32(&mut self, name: &str, val: f32) -> () {
+    pub fn set_f32(&mut self, name: &str, val: f32) -> () {
         let location = self.get_location(name);
 
         unsafe {
             gl::ProgramUniform1f(self.program, location, val);
+        }
+    }
+
+    pub fn set_int(&mut self, name: &str, val: i32) -> () {
+        let location = self.get_location(name);
+
+        unsafe {
+            gl::ProgramUniform1i(self.program, location, val);
         }
     }
 }

@@ -1,7 +1,4 @@
-use glam::IVec2;
 use imgui::{sys::*, FontConfig, FontSource};
-
-use crate::util::screen::update_screen;
 
 pub fn imgui_init() -> imgui::Context {
     let mut imgui = imgui::Context::create();
@@ -9,8 +6,6 @@ pub fn imgui_init() -> imgui::Context {
     //
     // Imgui setup
     //
-    let mut io = imgui.io_mut();
-
     let font_data = include_bytes!("../../content/fonts/Roboto-Regular.ttf");
     imgui.fonts().add_font(&[FontSource::TtfData {
         data: font_data,
