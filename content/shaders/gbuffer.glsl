@@ -13,13 +13,7 @@ struct STRUCT_MATERIAL {
   vec4 vDiffuseCol;
 };
 
-struct STRUCT_LIGHTING {
-  vec3 vLightDir;
-  vec3 vLightColor;
-};
-
 uniform STRUCT_MATERIAL materialInfo;
-uniform STRUCT_LIGHTING lightingInfo;
 
 // ============================================================================
 //

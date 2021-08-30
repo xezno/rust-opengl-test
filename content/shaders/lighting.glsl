@@ -38,10 +38,10 @@ out FS_IN fs_in;
 
 void main() 
 {
-  fs_in.vScreenPos = vec4( inPos, 1.0 );
-  fs_in.vTexCoords = inTexCoords.xy;
-  
-  gl_Position = fs_in.vScreenPos;
+    fs_in.vScreenPos = vec4( inPos, 1.0 );
+    fs_in.vTexCoords = inTexCoords.xy;
+    
+    gl_Position = fs_in.vScreenPos;
 }
 
 #endif
@@ -64,44 +64,44 @@ out vec4 FragColor;
 
 float lambert( vec3 normal, vec3 lightDir ) 
 {
-  return max( dot( normal, lightDir ), 0.0 );
+    return max( dot( normal, lightDir ), 0.0 );
 }
 
 float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
 {
-  vec3 reflectDir = reflect( -lightDir, normal );
-  float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), shininess );
-  return spec;
+    vec3 reflectDir = reflect( -lightDir, normal );
+    float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), shininess );
+    return spec;
 }
 
 void main()
 {
-  // retrieve data from G-buffer
-  vec3 FragPos = texture(gPosition, fs_in.vTexCoords).rgb;
-  vec4 Normal = texture(gNormal, fs_in.vTexCoords);
-  vec3 Albedo = texture(gColorSpec, fs_in.vTexCoords).rgb;
-  float Specular = texture(gColorSpec, fs_in.vTexCoords).a;
-  
-  if ( Normal.w == 0.0 )
-    discard;
-  
-  vec3 lightDir = normalize( lightingInfo.vLightDir );
-  vec3 normal = normalize( Normal.xyz );
+    vec3 vWorldPos = texture( gPosition, fs_in.vTexCoords ).xyz;
+    vec3 vNormal = texture( gNormal, fs_in.vTexCoords ).xyz;
+    bool bDraw = texture( gNormal, fs_in.vTexCoords ).w < 0.01;
+    vec3 vColor = texture( gColorSpec, fs_in.vTexCoords ).rgb;
+    float fSpecular = texture( gColorSpec, fs_in.vTexCoords ).a;
+    
+    if ( bDraw )
+      discard;
+    
+    vec3 lightDir = normalize( lightingInfo.vLightDir );
+    vec3 normal = normalize( vNormal.xyz );
 
-  vec3 lambertian = lambert( normal, lightDir ) * Albedo;
-  vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - FragPos ), Specular * 512.0 ) ) * lightingInfo.vLightColor;
-  vec3 ambient = 0.4 * Albedo;
+    vec3 lambertian = lambert( normal, lightDir ) * vColor;
+    vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - vWorldPos ), fSpecular * 512.0 ) ) * lightingInfo.vLightColor;
+    vec3 ambient = 0.4 * vColor;
 
-  if ( Specular <= 0 )
-  {
-    spec = vec3( 0.0 );
-  }
+    if ( fSpecular <= 0 )
+    {
+        spec = vec3( 0.0 );
+    }
 
-  vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;
-  lighting += ambient * normalize( lightingInfo.vLightColor );
+    vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;
+    lighting += ambient * normalize( lightingInfo.vLightColor );
 
-  lighting = pow( lighting, vec3( 2.2 ) );
-  FragColor = vec4( lighting, 1.0);
+    lighting = pow( lighting, vec3( 2.2 ) );
+    FragColor = vec4( lighting, 1.0);
 } 
 
 #endif
