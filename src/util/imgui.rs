@@ -1,7 +1,4 @@
-use glam::IVec2;
 use imgui::{sys::*, FontConfig, FontSource};
-
-use crate::util::screen::update_screen;
 
 pub fn imgui_init() -> imgui::Context {
     let mut imgui = imgui::Context::create();
@@ -9,10 +6,6 @@ pub fn imgui_init() -> imgui::Context {
     //
     // Imgui setup
     //
-    let mut io = imgui.io_mut();
-    io.display_size = [1280.0, 720.0];
-    update_screen(IVec2::new(1280, 720));
-
     let font_data = include_bytes!("../../content/fonts/Roboto-Regular.ttf");
     imgui.fonts().add_font(&[FontSource::TtfData {
         data: font_data,
@@ -20,7 +13,7 @@ pub fn imgui_init() -> imgui::Context {
         size_pixels: 14.0,
     }]);
 
-    // let style = imgui.style_mut();
+    // MESS AHEAD
     imgui.style_mut().colors[ImGuiCol_Text as usize] = [1.00, 1.00, 1.00, 1.00];
     imgui.style_mut().colors[ImGuiCol_TextDisabled as usize] = [0.50, 0.50, 0.50, 1.00];
     imgui.style_mut().colors[ImGuiCol_WindowBg as usize] = [0.13, 0.14, 0.15, 1.00];

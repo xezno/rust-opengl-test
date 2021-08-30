@@ -11,7 +11,7 @@ use glam::*;
 use gl::types::*;
 
 use super::{camera::Camera, scene::LoadedScene, transform::Transform};
-use crate::render::{material::Material, mesh::Mesh, shader::Shader};
+use crate::render::{material::Material, mesh::Mesh, shader::Shader, texture::Texture};
 
 pub struct Vertex {
     pub position: Vec3,
@@ -25,6 +25,8 @@ pub struct Model {
     pub meshes: Vec<Mesh>,
     pub transform: Transform,
     pub material: Material,
+
+    pub diffuse_texture: Texture,
 }
 
 impl Model {
@@ -32,7 +34,9 @@ impl Model {
         let mut model = Model {
             meshes: Vec::new(),
             transform: Transform::IDENTITY,
-            material: Material::default(),
+            material: Material::new(),
+
+            diffuse_texture: Texture::default(),
         };
 
         log::info!("Loading OBJ from '{}'", obj_path);
@@ -48,22 +52,34 @@ impl Model {
                 for shape in geometry.shapes {
                     if let wavefront_obj::obj::Primitive::Triangle(a, b, c) = shape.primitive {
                         for key in &[a, b, c] {
-                            let p = object.vertices[key.0];
-                            let position = Vec3::new(p.x as f32, p.y as f32, p.z as f32);
-                            let vertex_index = vertices.len() as GLuint;
-
-                            let t = object.tex_vertices[key.1.unwrap()];
-                            let texcoord = Vec2::new(t.u as f32, t.v as f32);
-
-                            let n = object.normals[key.2.unwrap()];
-                            let normal = Vec3::new(n.x as f32, n.y as f32, n.z as f32);
-
-                            let vertex = Vertex {
-                                position,
-                                normal,
-                                texcoord,
+                            let mut vertex = Vertex {
+                                position: vec3(0.0, 0.0, 0.0),
+                                texcoord: vec2(0.0, 0.0),
+                                normal: vec3(0.0, 0.0, 0.0),
                             };
 
+                            {
+                                let p = object.vertices[key.0];
+                                let position = Vec3::new(p.x as f32, p.y as f32, p.z as f32);
+
+                                vertex.position = position;
+                            }
+
+                            if key.1.is_some() {
+                                let t = object.tex_vertices[key.1.unwrap()];
+                                let texcoord = Vec2::new(t.u as f32, t.v as f32);
+
+                                vertex.texcoord = texcoord;
+                            }
+
+                            if key.2.is_some() {
+                                let n = object.normals[key.2.unwrap()];
+                                let normal = Vec3::new(n.x as f32, n.y as f32, n.z as f32);
+
+                                vertex.normal = normal;
+                            }
+
+                            let vertex_index = vertices.len() as GLuint;
                             vertices.push(vertex);
                             indices.push(vertex_index);
                         }
@@ -76,6 +92,7 @@ impl Model {
 
         let mut gl_vertices: Vec<GLfloat> = Vec::new();
         let mut gl_normals: Vec<GLfloat> = Vec::new();
+        let mut gl_texcoords: Vec<GLfloat> = Vec::new();
 
         for vertex in vertices {
             gl_vertices.push(vertex.position.x);
@@ -85,9 +102,12 @@ impl Model {
             gl_normals.push(vertex.normal.x);
             gl_normals.push(vertex.normal.z);
             gl_normals.push(vertex.normal.y);
+
+            gl_texcoords.push(vertex.texcoord.x);
+            gl_texcoords.push(vertex.texcoord.y);
         }
 
-        let mesh = Mesh::new(gl_vertices, gl_normals);
+        let mesh = Mesh::new(gl_vertices, gl_normals, gl_texcoords);
         model.meshes.push(mesh);
 
         return model;
@@ -108,14 +128,18 @@ impl Model {
                 shader.set_vec3("uCamPos", &camera.position);
 
                 // Submit scene uniforms
-                shader.set_vec3("lightingInfo.vLightPos", &scene.light.position);
+                shader.set_vec3(
+                    "lightingInfo.vLightDir",
+                    &scene.light.direction.to_euler(EulerRot::XYZ).into(),
+                );
                 shader.set_vec3("lightingInfo.vLightColor", &scene.light.color);
 
                 // Submit material uniforms
                 shader.set_f32("materialInfo.fSpecular", self.material.specular);
-                shader.set_vec4("materialInfo.vDiffuseCol", &self.material.diffuse);
-            }
 
+                shader.set_i32("tDiffuseTex", 0);
+            }
+            self.diffuse_texture.use_this();
             mesh.draw_this();
         }
     }
