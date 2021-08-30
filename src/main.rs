@@ -11,13 +11,12 @@ extern crate sdl2;
 
 use gl::types::GLuint;
 use glam::*;
-use imgui::sys::{igGetContentRegionAvail, igSetNextItemWidth, ImDrawList_AddCallback, ImVec2};
+use imgui::sys::{igGetContentRegionAvail, igSetNextItemWidth, ImVec2};
 use imgui::{Image, TextureId};
 use render::{gfx::*, shader::Shader};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
 use sdl2::sys::SDL_GL_SetAttribute;
-use util::screen::get_screen;
 use util::{input::INPUT, screen::update_screen, time::update_time};
 
 pub mod render;

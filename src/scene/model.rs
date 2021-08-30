@@ -75,8 +75,7 @@ impl Model {
                                 vertex.normal = normal;
                             }
 
-                            let vertex_index = (vertices.len() as GLuint);
-
+                            let vertex_index = vertices.len() as GLuint;
                             vertices.push(vertex);
                             indices.push(vertex_index);
                         }
