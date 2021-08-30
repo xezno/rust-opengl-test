@@ -61,6 +61,7 @@ uniform sampler2D gNormal;
 uniform sampler2D gColorSpec;
 
 out vec4 FragColor;
+
 float lambert( vec3 normal, vec3 lightDir ) 
 {
   return max( dot( normal, lightDir ), 0.0 );
@@ -71,7 +72,7 @@ float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
   vec3 reflectDir = reflect( -lightDir, normal );
   float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), shininess );
   return spec;
-} 
+}
 
 void main()
 {

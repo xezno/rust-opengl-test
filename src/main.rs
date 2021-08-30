@@ -11,12 +11,13 @@ extern crate sdl2;
 
 use gl::types::GLuint;
 use glam::*;
-use imgui::sys::{igGetContentRegionAvail, igSetNextItemWidth, ImVec2};
+use imgui::sys::{igGetContentRegionAvail, igSetNextItemWidth, ImDrawList_AddCallback, ImVec2};
 use imgui::{Image, TextureId};
 use render::{gfx::*, shader::Shader};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
 use sdl2::sys::SDL_GL_SetAttribute;
+use util::screen::get_screen;
 use util::{input::INPUT, screen::update_screen, time::update_time};
 
 pub mod render;
@@ -93,12 +94,6 @@ fn main() {
         // Input
         //
         {
-            // Reset input
-            unsafe {
-                INPUT.mouse.delta = vec2(0.0, 0.0);
-                INPUT.mouse.wheel = 0.0;
-            }
-
             for event in event_pump.poll_iter() {
                 imgui_sdl2.handle_event(&mut imgui, &event);
                 if imgui_sdl2.ignore_event(&event) {
@@ -179,6 +174,12 @@ fn main() {
             camera.update(&ui);
         }
 
+        // Reset input
+        unsafe {
+            INPUT.mouse.delta = vec2(0.0, 0.0);
+            INPUT.mouse.wheel = 0.0;
+        }
+
         //
         // Render
         //
@@ -186,9 +187,7 @@ fn main() {
             // Geo pass
             {
                 unsafe {
-                    // gl::ClearDepth(0.0);
                     gl::Enable(gl::DEPTH_TEST);
-                    // gl::DepthFunc(gl::GREATER);
                     let attachments = [
                         gl::COLOR_ATTACHMENT0,
                         gl::COLOR_ATTACHMENT1,

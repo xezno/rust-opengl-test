@@ -7,6 +7,7 @@
 // ============================================================================
 
 use gl::types::*;
+use glam::IVec2;
 use std::{ffi::c_void, ptr};
 
 pub fn gfx_setup(window: &mut sdl2::video::Window) {
@@ -67,89 +68,9 @@ pub fn gfx_setup_gbuffer(
 
     let window_size = crate::util::screen::get_screen().size;
 
-    //
-    // Position color buffer
-    //
-    unsafe {
-        gl::GenTextures(1, g_position);
-        gl::BindTexture(gl::TEXTURE_2D, *g_position);
-        gl::TexImage2D(
-            gl::TEXTURE_2D,
-            0,
-            gl::RGBA16F as i32,
-            window_size.x,
-            window_size.y,
-            0,
-            gl::RGBA,
-            gl::FLOAT,
-            std::ptr::null_mut(),
-        );
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
-        gl::FramebufferTexture2D(
-            gl::FRAMEBUFFER,
-            gl::COLOR_ATTACHMENT0,
-            gl::TEXTURE_2D,
-            *g_position,
-            0,
-        );
-    }
-
-    //
-    // Normal color buffer
-    //
-    unsafe {
-        gl::GenTextures(1, g_normal);
-        gl::BindTexture(gl::TEXTURE_2D, *g_normal);
-        gl::TexImage2D(
-            gl::TEXTURE_2D,
-            0,
-            gl::RGBA16F as i32,
-            window_size.x,
-            window_size.y,
-            0,
-            gl::RGBA,
-            gl::FLOAT,
-            std::ptr::null_mut(),
-        );
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
-        gl::FramebufferTexture2D(
-            gl::FRAMEBUFFER,
-            gl::COLOR_ATTACHMENT1,
-            gl::TEXTURE_2D,
-            *g_normal,
-            0,
-        );
-    }
-
-    //
-    // Color + specular color buffer
-    //
-    unsafe {
-        gl::GenTextures(1, g_color_spec);
-        gl::BindTexture(gl::TEXTURE_2D, *g_color_spec);
-        gl::TexImage2D(
-            gl::TEXTURE_2D,
-            0,
-            gl::RGBA16F as i32,
-            window_size.x,
-            window_size.y,
-            0,
-            gl::RGBA,
-            gl::FLOAT,
-            std::ptr::null_mut(),
-        );
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
-        gl::FramebufferTexture2D(
-            gl::FRAMEBUFFER,
-            gl::COLOR_ATTACHMENT2,
-            gl::TEXTURE_2D,
-            *g_color_spec,
-            0,
-        );
-    }
+    gfx_create_g_buffer(&mut *g_position, window_size, gl::COLOR_ATTACHMENT0);
+    gfx_create_g_buffer(&mut *g_normal, window_size, gl::COLOR_ATTACHMENT1);
+    gfx_create_g_buffer(&mut *g_color_spec, window_size, gl::COLOR_ATTACHMENT2);
 
     let mut rbo: GLuint = 0;
     unsafe {
@@ -165,6 +86,33 @@ pub fn gfx_setup_gbuffer(
     }
 
     return g_buffer;
+}
+
+fn gfx_create_g_buffer(g_buffer_tex: &mut GLuint, window_size: IVec2, attachment: GLuint) {
+    unsafe {
+        gl::GenTextures(1, g_buffer_tex);
+        gl::BindTexture(gl::TEXTURE_2D, *g_buffer_tex);
+        gl::TexImage2D(
+            gl::TEXTURE_2D,
+            0,
+            gl::RGBA16F as i32,
+            window_size.x,
+            window_size.y,
+            0,
+            gl::RGBA,
+            gl::FLOAT,
+            std::ptr::null_mut(),
+        );
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
+        gl::FramebufferTexture2D(
+            gl::FRAMEBUFFER,
+            attachment,
+            gl::TEXTURE_2D,
+            *g_buffer_tex,
+            0,
+        );
+    }
 }
 
 pub fn gfx_quad_setup() -> GLuint {
