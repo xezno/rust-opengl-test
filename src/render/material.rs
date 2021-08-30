@@ -8,20 +8,18 @@
 
 use glam::Vec4;
 
-#[derive(
-    Default, Debug, Clone, Copy, PartialEq, serde_derive::Serialize, serde_derive::Deserialize,
-)]
+#[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Material {
-    pub diffuse: Vec4,
+    pub diffuse: String,
     pub specular: f32,
 }
 
 impl Material {
     pub fn new() -> Material {
-        Material {
-            diffuse: Vec4::ONE,
-            specular: 0f32,
-        }
+        return Material {
+            diffuse: "content/textures/missing.png".to_string(),
+            specular: 0.0,
+        };
     }
 }

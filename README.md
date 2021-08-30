@@ -8,7 +8,7 @@ Terrible Rust rendering thing.
 
 ## Things to note
 
-### 1. Lots of unsafe
+### 1. Code isn't great
 
 I don't know much Rust but I know enough about programming that writing the word `unsafe` means you can do bad stuff.
 In this situation though, I have to use it in order to access the OpenGL api, I think that doing so is generally better than

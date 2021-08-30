@@ -6,11 +6,12 @@ struct FS_IN {
   vec3 vWorldPos;
   vec3 vNormal;
   vec4 vScreenPos;
+  vec2 vTexCoords;
 };
 
 struct STRUCT_MATERIAL {
   float fSpecular;
-  vec4 vDiffuseCol;
+  sampler2D tDiffuseTex;
 };
 
 uniform STRUCT_MATERIAL materialInfo;
@@ -23,6 +24,7 @@ uniform STRUCT_MATERIAL materialInfo;
 
 layout(location = 0) in vec3 inPos;
 layout(location = 1) in vec3 inNormal;
+layout(location = 2) in vec2 inTexCoords;
 
 uniform mat4 uModelMat;
 uniform mat4 uProjViewMat;
@@ -34,6 +36,7 @@ void main()
   fs_in.vWorldPos = vec3( uModelMat * vec4( inPos, 1.0 ) );
   fs_in.vNormal = inNormal;
   fs_in.vScreenPos = uProjViewMat * uModelMat * vec4( inPos, 1.0 );
+  fs_in.vTexCoords = inTexCoords;
   
   gl_Position = fs_in.vScreenPos;
 }
@@ -65,7 +68,10 @@ void main()
     gPosition = vec4( fs_in.vWorldPos, 1.0 );
     gNormal = vec4( fs_in.vNormal, 1.0 );
 
-    gColorSpec.rgb = materialInfo.vDiffuseCol.rgb;
+    vec4 diffuseCol = texture( materialInfo.tDiffuseTex, fs_in.vTexCoords.xy );
+    // vec4 diffuseCol = vec4( fs_in.vTexCoords.xy, 1, 1 );
+
+    gColorSpec.rgb = diffuseCol.rgb;
     gColorSpec.a = materialInfo.fSpecular / 512.0;
 }
 

@@ -13,7 +13,7 @@ use serde_json::*;
 use std::fs;
 
 use super::{camera::Camera, model::Model, transform::Transform};
-use crate::render::{material::Material, shader::Shader};
+use crate::render::{material::Material, shader::Shader, texture::Texture};
 
 #[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -66,7 +66,8 @@ impl Scene {
                     info!("Scene: loading model");
                     let mut model = Model::new(object.path.as_ref().unwrap().as_str());
                     model.transform = object.transform;
-                    model.material = object.material.unwrap();
+                    model.material = object.material.clone().unwrap();
+                    model.diffuse_texture = Texture::new(model.material.diffuse.as_str());
                     loaded_scene.models.push(model);
 
                     if object.phys.is_some() {

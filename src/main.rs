@@ -49,6 +49,16 @@ fn main() {
         .build()
         .unwrap();
 
+    unsafe {
+        SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_CONTEXT_MINOR_VERSION, 6);
+
+        SDL_GL_SetAttribute(
+            sdl2::sys::SDL_GLattr::SDL_GL_CONTEXT_PROFILE_MASK,
+            sdl2::sys::SDL_GLprofile::SDL_GL_CONTEXT_PROFILE_CORE as i32,
+        );
+    }
+
     update_screen(win_size.as_i32());
 
     let _gl_context = window.gl_create_context().unwrap();
@@ -227,9 +237,9 @@ fn main() {
                     gl::ActiveTexture(gl::TEXTURE2);
                     gl::BindTexture(gl::TEXTURE_2D, g_color_spec);
 
-                    lighting_shader.set_int("gPosition", 0);
-                    lighting_shader.set_int("gNormal", 1);
-                    lighting_shader.set_int("gColorSpec", 2);
+                    lighting_shader.set_i32("gPosition", 0);
+                    lighting_shader.set_i32("gNormal", 1);
+                    lighting_shader.set_i32("gColorSpec", 2);
 
                     // Submit scene uniforms
                     lighting_shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
@@ -264,20 +274,23 @@ fn main() {
 
                 let size_arr = [size.x, size.y];
 
-                Image::new(TextureId::new(g_position as usize), size_arr)
-                    .uv0([0.0, 1.0])
-                    .uv1([1.0, 0.0])
-                    .build(&ui);
+                imgui::Window::new(imgui::im_str!("G-Buffers")).build(&ui, || {
+                    Image::new(TextureId::new(g_position as usize), size_arr)
+                        .uv0([0.0, 1.0])
+                        .uv1([1.0, 0.0])
+                        .build(&ui);
 
-                Image::new(TextureId::new(g_normal as usize), size_arr)
-                    .uv0([0.0, 1.0])
-                    .uv1([1.0, 0.0])
-                    .build(&ui);
+                    Image::new(TextureId::new(g_normal as usize), size_arr)
+                        .uv0([0.0, 1.0])
+                        .uv1([1.0, 0.0])
+                        .build(&ui);
 
-                Image::new(TextureId::new(g_color_spec as usize), size_arr)
-                    .uv0([0.0, 1.0])
-                    .uv1([1.0, 0.0])
-                    .build(&ui);
+                    Image::new(TextureId::new(g_color_spec as usize), size_arr)
+                        .uv0([0.0, 1.0])
+                        .uv1([1.0, 0.0])
+                        .build(&ui);
+                });
+
                 imgui_renderer.render(ui);
             }
             window.gl_swap_window();

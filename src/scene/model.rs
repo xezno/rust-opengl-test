@@ -11,7 +11,7 @@ use glam::*;
 use gl::types::*;
 
 use super::{camera::Camera, scene::LoadedScene, transform::Transform};
-use crate::render::{material::Material, mesh::Mesh, shader::Shader};
+use crate::render::{material::Material, mesh::Mesh, shader::Shader, texture::Texture};
 
 pub struct Vertex {
     pub position: Vec3,
@@ -25,6 +25,8 @@ pub struct Model {
     pub meshes: Vec<Mesh>,
     pub transform: Transform,
     pub material: Material,
+
+    pub diffuse_texture: Texture,
 }
 
 impl Model {
@@ -32,7 +34,9 @@ impl Model {
         let mut model = Model {
             meshes: Vec::new(),
             transform: Transform::IDENTITY,
-            material: Material::default(),
+            material: Material::new(),
+
+            diffuse_texture: Texture::default(),
         };
 
         log::info!("Loading OBJ from '{}'", obj_path);
@@ -132,9 +136,10 @@ impl Model {
 
                 // Submit material uniforms
                 shader.set_f32("materialInfo.fSpecular", self.material.specular);
-                shader.set_vec4("materialInfo.vDiffuseCol", &self.material.diffuse);
-            }
 
+                shader.set_i32("tDiffuseTex", 0);
+            }
+            self.diffuse_texture.use_this();
             mesh.draw_this();
         }
     }
