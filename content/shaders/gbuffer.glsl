@@ -62,7 +62,13 @@ layout (location = 2) out vec4 gColorSpec;
 
 void main()
 {
-    gPosition = fs_in.vScreenPos;
+    //
+    // Here's how we use each gbuffer:
+    // - gPosition: Position in world space. RGB = XYZ position, alpha unused
+    // - gNormal: Normal in world space. RGB = XYZ normal, alpha = draw skybox - 1 for don't draw, 0 for draw
+    // - gColorSpec: Albedo + specular. RGB = albedo, alpha = specular power (scaled by 512.0).
+    //
+    gPosition = vec4( fs_in.vWorldPos, 1.0 );
     gNormal = vec4( fs_in.vNormal, 1.0 );
 
     gColorSpec.rgb = materialInfo.vDiffuseCol.rgb;

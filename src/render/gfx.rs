@@ -35,7 +35,7 @@ pub fn gfx_resize(w: i32, h: i32) {
 
 pub fn gfx_clear() {
     unsafe {
-        gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+        gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
     }
 }
 
@@ -68,9 +68,9 @@ pub fn gfx_setup_gbuffer(
 
     let window_size = crate::util::screen::get_screen().size;
 
-    gfx_create_g_buffer(&mut *g_position, window_size, gl::COLOR_ATTACHMENT0);
-    gfx_create_g_buffer(&mut *g_normal, window_size, gl::COLOR_ATTACHMENT1);
-    gfx_create_g_buffer(&mut *g_color_spec, window_size, gl::COLOR_ATTACHMENT2);
+    gfx_create_single_g_buffer(&mut *g_position, window_size, gl::COLOR_ATTACHMENT0);
+    gfx_create_single_g_buffer(&mut *g_normal, window_size, gl::COLOR_ATTACHMENT1);
+    gfx_create_single_g_buffer(&mut *g_color_spec, window_size, gl::COLOR_ATTACHMENT2);
 
     let mut rbo: GLuint = 0;
     unsafe {
@@ -78,17 +78,22 @@ pub fn gfx_setup_gbuffer(
         gl::BindRenderbuffer(gl::RENDERBUFFER, rbo);
         gl::RenderbufferStorage(
             gl::RENDERBUFFER,
-            gl::DEPTH_COMPONENT24,
+            gl::DEPTH24_STENCIL8,
             window_size.x,
             window_size.y,
         );
-        gl::FramebufferRenderbuffer(gl::FRAMEBUFFER, gl::DEPTH_ATTACHMENT, gl::RENDERBUFFER, rbo);
+        gl::FramebufferRenderbuffer(
+            gl::FRAMEBUFFER,
+            gl::DEPTH_STENCIL_ATTACHMENT,
+            gl::RENDERBUFFER,
+            rbo,
+        );
     }
 
     return g_buffer;
 }
 
-fn gfx_create_g_buffer(g_buffer_tex: &mut GLuint, window_size: IVec2, attachment: GLuint) {
+fn gfx_create_single_g_buffer(g_buffer_tex: &mut GLuint, window_size: IVec2, attachment: GLuint) {
     unsafe {
         gl::GenTextures(1, g_buffer_tex);
         gl::BindTexture(gl::TEXTURE_2D, *g_buffer_tex);
