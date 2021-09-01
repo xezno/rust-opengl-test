@@ -76,8 +76,8 @@ float lambert( vec3 normal, vec3 lightDir )
 
 float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
 {
-    vec3 reflectDir = reflect( -lightDir, normal );
-    float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), shininess );
+    vec3 halfwayDir = normalize( lightDir + viewDir );
+    float spec = pow( max( dot( normal, halfwayDir ), 0.0 ), shininess );
     return spec;
 }
 
@@ -97,15 +97,20 @@ void main()
 
     // We'll also calculate the lighting for each point light in the scene
     vec3 vViewDir = normalize(uCamPos - vWorldPos);
-    vColor = vec3( 0.0 );
+    
     for ( int i = 0; i < MAX_LIGHTS; i++ )
     {
         vec3 vLightDir = normalize( pointLights[i].vPos - vWorldPos );
-        float fLambert = lambert( vNormal, vLightDir );
-        float fAttenuation = 1.0 / ( 1.0 + 512 * ( length( pointLights[i].vPos - vWorldPos ) ) );
-        // float fSpecular = specular( vNormal, vLightDir, vViewDir, fSpecular );
+        float lambertian = lambert( vNormal, vLightDir );
+
+        float spec = 0;
+        if ( fSpecular > 0 )
+            spec = specular( vNormal, vLightDir, normalize( uCamPos - fs_in.vWorldPos ), fSpecular * 512.0 );
+
+        vec3 lighting = ( lambertian + spec ) * pointLights[i].vColor;
+        float attenuation = 1.0 / ( 32 + length( pointLights[i].vPos - vWorldPos ) );
         
-        vColor += fLambert * pointLights[i].vColor * fAttenuation * 32;// * fSpecular;
+        vColor += lighting * attenuation * 4;
     }
     
     FragColor = vec4( vColor, 1.0 );
