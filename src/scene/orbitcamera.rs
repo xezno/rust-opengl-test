@@ -134,7 +134,7 @@ impl OrbitCamera for Camera {
         let up = vec3(
             self.euler_rot.x.to_radians().sin() * self.euler_rot.y.to_radians().sin(),
             self.euler_rot.x.to_radians().cos() * self.euler_rot.y.to_radians().sin(),
-            self.euler_rot.y.to_radians().cos(),
+            -self.euler_rot.y.to_radians().cos(),
         );
 
         let right = forward.cross(up);
@@ -149,8 +149,8 @@ impl OrbitCamera for Camera {
             if INPUT.mouse.right {
                 ui.set_mouse_cursor(Some(MouseCursor::Hand));
 
-                self.look_at += up * INPUT.mouse.delta.y * 0.005;
-                self.look_at += right * INPUT.mouse.delta.x * 0.005;
+                self.look_at -= up * INPUT.mouse.delta.y * 0.0125;
+                self.look_at -= right * INPUT.mouse.delta.x * 0.0125;
             }
         }
     }
