@@ -111,77 +111,22 @@ fn main() {
     debug_shader.scan_uniforms();
 
     'main: loop {
-        //
-        // Input
-        //
-        {
-            for event in event_pump.poll_iter() {
-                imgui_sdl2.handle_event(&mut imgui, &event);
-                if imgui_sdl2.ignore_event(&event) {
-                    continue;
-                }
+        // Reset input
+        unsafe {
+            INPUT.mouse.delta = vec2(0.0, 0.0);
+            INPUT.mouse.wheel = 0.0;
+        }
 
-                match event {
-                    //
-                    // Mouse
-                    //
-                    sdl2::event::Event::MouseMotion { x, y, .. } => unsafe {
-                        // TODO: Work out why this shits the bed when you move the mouse quickly
-
-                        let delta = vec2(
-                            (x - INPUT.mouse.position.x) as f32,
-                            (y - INPUT.mouse.position.y) as f32,
-                        );
-
-                        INPUT.mouse.delta = delta;
-                        INPUT.mouse.position = IVec2::new(x, y);
-                    },
-                    sdl2::event::Event::MouseButtonDown { mouse_btn, .. } => unsafe {
-                        match mouse_btn {
-                            sdl2::mouse::MouseButton::Left => INPUT.mouse.left = true,
-                            sdl2::mouse::MouseButton::Right => INPUT.mouse.right = true,
-                            _ => {}
-                        }
-                    },
-                    sdl2::event::Event::MouseButtonUp { mouse_btn, .. } => unsafe {
-                        match mouse_btn {
-                            sdl2::mouse::MouseButton::Left => INPUT.mouse.left = false,
-                            sdl2::mouse::MouseButton::Right => INPUT.mouse.right = false,
-                            _ => {}
-                        }
-                    },
-
-                    sdl2::event::Event::MouseWheel { y, .. } => unsafe {
-                        INPUT.mouse.wheel = y as f32;
-                    },
-
-                    //
-                    // Window
-                    //
-                    sdl2::event::Event::Quit { .. } => break 'main,
-                    sdl2::event::Event::Window { win_event, .. } => match win_event {
-                        // sdl2::event::WindowEvent::Resized(w, h) => {
-                        // }
-                        sdl2::event::WindowEvent::SizeChanged(w, h) => {
-                            gfx_resize(w, h);
-                            update_screen(IVec2::new(w, h));
-
-                            // HACK? Resize gbuffers
-                            g_buffer = gfx_setup_gbuffer(
-                                &mut g_position,
-                                &mut g_normal,
-                                &mut g_color_spec,
-                            );
-                        }
-                        _ => {}
-                    },
-
-                    //
-                    //
-                    //
-                    _ => {}
-                }
-            }
+        if !handle_input(
+            &mut event_pump,
+            &mut imgui,
+            &mut imgui_sdl2,
+            &mut g_buffer,
+            &mut g_position,
+            &mut g_normal,
+            &mut g_color_spec,
+        ) {
+            break 'main;
         }
 
         imgui_sdl2.prepare_frame(imgui.io_mut(), &window, &event_pump.mouse_state());
@@ -204,12 +149,6 @@ fn main() {
                 let offset = vec3(time.sin() * 0.5, time.cos() * 0.5, time.sin() * 0.5);
                 point_light.transform.position = point_light.orig_pos + offset;
             }
-        }
-
-        // Reset input
-        unsafe {
-            INPUT.mouse.delta = vec2(0.0, 0.0);
-            INPUT.mouse.wheel = 0.0;
         }
 
         //
@@ -299,12 +238,6 @@ fn main() {
                     );
 
                     for (i, point_light) in loaded_scene.point_lights.iter().enumerate() {
-                        // log::info!(
-                        //     "Point light {}, pos {}, col {}",
-                        //     i,
-                        //     point_light.transform.position,
-                        //     point_light.color
-                        // );
                         lighting_shader.set_vec3(
                             format!("pointLights[{}].vPos", i).as_str(),
                             &point_light.transform.position,
@@ -393,4 +326,78 @@ fn main() {
             last_time = std::time::Instant::now();
         }
     }
+}
+
+fn handle_input(
+    event_pump: &mut sdl2::EventPump,
+    imgui: &mut imgui::Context,
+    imgui_sdl2: &mut imgui_sdl2::ImguiSdl2,
+
+    g_buffer: &mut GLuint,
+    g_position: &mut GLuint,
+    g_normal: &mut GLuint,
+    g_color_spec: &mut GLuint,
+) -> bool {
+    for event in event_pump.poll_iter() {
+        imgui_sdl2.handle_event(imgui, &event);
+        if imgui_sdl2.ignore_event(&event) {
+            continue;
+        }
+
+        match event {
+            //
+            // Mouse
+            //
+            sdl2::event::Event::MouseMotion { x, y, .. } => unsafe {
+                // TODO: Work out why this shits the bed when you move the mouse quickly
+
+                let delta = vec2(
+                    (x - INPUT.mouse.position.x) as f32,
+                    (y - INPUT.mouse.position.y) as f32,
+                );
+
+                INPUT.mouse.delta = delta;
+                INPUT.mouse.position = IVec2::new(x, y);
+            },
+            sdl2::event::Event::MouseButtonDown { mouse_btn, .. } => unsafe {
+                match mouse_btn {
+                    sdl2::mouse::MouseButton::Left => INPUT.mouse.left = true,
+                    sdl2::mouse::MouseButton::Right => INPUT.mouse.right = true,
+                    _ => {}
+                }
+            },
+            sdl2::event::Event::MouseButtonUp { mouse_btn, .. } => unsafe {
+                match mouse_btn {
+                    sdl2::mouse::MouseButton::Left => INPUT.mouse.left = false,
+                    sdl2::mouse::MouseButton::Right => INPUT.mouse.right = false,
+                    _ => {}
+                }
+            },
+
+            sdl2::event::Event::MouseWheel { y, .. } => unsafe {
+                INPUT.mouse.wheel = y as f32;
+            },
+
+            //
+            // Window
+            //
+            sdl2::event::Event::Quit { .. } => return false,
+            sdl2::event::Event::Window { win_event, .. } => match win_event {
+                sdl2::event::WindowEvent::SizeChanged(w, h) => {
+                    gfx_resize(w, h);
+                    update_screen(IVec2::new(w, h));
+
+                    // HACK? Resize gbuffers
+                    *g_buffer = gfx_setup_gbuffer(g_position, g_normal, g_color_spec);
+                }
+                _ => {}
+            },
+
+            //
+            //
+            //
+            _ => {}
+        }
+    }
+    return true;
 }

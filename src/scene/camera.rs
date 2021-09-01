@@ -30,7 +30,3 @@ pub struct Camera {
     pub(super) wish_orbit_distance: f32,
     pub(super) orbit_distance: f32,
 }
-// trait Camera {
-//     fn new();
-//     fn update(&mut self);
-// }
