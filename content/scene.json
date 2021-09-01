@@ -87,7 +87,7 @@
         "scale": [0.2, 0.2, 0.2]
       },
       "material": {
-        "diffuse": "content/textures/test.png",
+        "diffuse": "content/textures/missing.png",
         "specular": 128
       },
       "phys": "ball"
@@ -103,17 +103,17 @@
         "scale": [0.2, 0.2, 0.2]
       },
       "material": {    
-        "diffuse": "content/textures/test.png",
+        "diffuse": "content/textures/missing.png",
         "specular": 128
       },
       "phys": "ball"
     },
 
     {
-      "type": "light",
+      "type": "light_sun",
       "name": "directional light 1",
       "transform": {
-        "position": [0.0, 0.0, 5.0],
+        "position": [0.0, 0.0, 0.0],
         "rotation": [ 0.1464466, 0.3535534, 0.3535534, 0.8535534 ],
         "scale": [1.0, 1.0, 1.0]
       }

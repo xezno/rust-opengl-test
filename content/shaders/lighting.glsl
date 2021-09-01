@@ -19,8 +19,15 @@ struct STRUCT_LIGHTING {
   vec3 vLightColor;
 };
 
+#define MAX_LIGHTS 384
+struct POINT_LIGHT {
+    vec3 vPos;
+    vec3 vColor;
+};
+
 uniform STRUCT_MATERIAL materialInfo;
 uniform STRUCT_LIGHTING lightingInfo;
+uniform POINT_LIGHT pointLights[MAX_LIGHTS];
 
 // ============================================================================
 //
@@ -83,25 +90,26 @@ void main()
     float fSpecular = texture( gColorSpec, fs_in.vTexCoords ).a;
     
     if ( bDraw )
-      discard;
-    
-    vec3 lightDir = normalize( lightingInfo.vLightDir );
-    vec3 normal = normalize( vNormal.xyz );
+        discard;
 
-    vec3 lambertian = lambert( normal, lightDir ) * vColor;
-    vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - vWorldPos ), fSpecular * 512.0 ) ) * lightingInfo.vLightColor;
-    vec3 ambient = 0.4 * vColor;
+    // We already calculated the main directional lighting in the gbuffer stage
+    // so we can just use that.
 
-    if ( fSpecular <= 0 )
+    // We'll also calculate the lighting for each point light in the scene
+    vec3 vViewDir = normalize(uCamPos - vWorldPos);
+    vColor = vec3( 0.0 );
+    for ( int i = 0; i < MAX_LIGHTS; i++ )
     {
-        spec = vec3( 0.0 );
+        vec3 vLightDir = normalize( pointLights[i].vPos - vWorldPos );
+        float fLambert = lambert( vNormal, vLightDir );
+        float fAttenuation = 1.0 / ( 1.0 + 512 * ( length( pointLights[i].vPos - vWorldPos ) ) );
+        // float fSpecular = specular( vNormal, vLightDir, vViewDir, fSpecular );
+        
+        vColor += fLambert * pointLights[i].vColor * fAttenuation * 32;// * fSpecular;
     }
-
-    vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;
-    lighting += ambient * normalize( lightingInfo.vLightColor );
-
-    lighting = pow( lighting, vec3( 2.2 ) );
-    FragColor = vec4( lighting, 1.0);
-} 
+    
+    FragColor = vec4( vColor, 1.0 );
+    // FragColor = vec4( pointLights[i].vPos, 1.0 );
+}
 
 #endif

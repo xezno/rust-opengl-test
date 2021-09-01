@@ -63,6 +63,8 @@ in FS_IN fs_in;
 
 uniform vec3 uCamPos;
 
+uniform vec3 vDebugLightCol;
+
 layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec4 gNormal;
 layout (location = 2) out vec4 gColorSpec;
@@ -81,42 +83,11 @@ float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
 
 void main()
 {
-    //
-    // Here's how we use each gbuffer:
-    // - gPosition: Position in world space. RGB = XYZ position, alpha unused
-    // - gNormal: Normal in world space. RGB = XYZ normal, alpha = draw skybox - 1 for don't draw, 0 for draw
-    // - gColorSpec: Albedo (w/ scene directional lighting calculated) + specular. RGB = albedo, alpha = specular power (scaled by 512.0).
-    //
     gPosition = vec4( fs_in.vWorldPos, 1.0 );
     gNormal = vec4( fs_in.vNormal, 1.0 );
+    gColorSpec.rgb = vDebugLightCol;
 
-    // Weird step: calculate sun lighting here rather than in our lighting pass
-    {
-        vec4 diffuseCol = texture( materialInfo.tDiffuseTex, fs_in.vTexCoords.xy );
-        
-        vec3 lightDir = normalize( lightingInfo.vLightDir );
-        vec3 normal = normalize( fs_in.vNormal.xyz );
-
-        vec3 lambertian = lambert( normal, lightDir ) * diffuseCol.rgb;
-        vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), materialInfo.fSpecular ) ) * lightingInfo.vLightColor;
-        vec3 ambient = 0.4 * diffuseCol.rgb;
-
-        if ( materialInfo.fSpecular <= 0 )
-        {
-            spec = vec3( 0.0 );
-        }
-
-        vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;
-        lighting += ambient * normalize( lightingInfo.vLightColor );
-
-        lighting = pow( lighting, vec3( 2.2 ) );
-        diffuseCol = vec4( lighting, 1.0 );
-
-
-        gColorSpec.rgb = diffuseCol.rgb;
-    }
-
-    gColorSpec.a = materialInfo.fSpecular / 512.0;
+    gColorSpec.a = 0.0;
 }
 
 #endif

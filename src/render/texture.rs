@@ -35,7 +35,7 @@ impl Texture {
         let mut id: GLuint = 0;
         unsafe {
             gl::GenTextures(1, &mut id);
-            log::info!("Creating GL texture {}", id);
+            log::trace!("Creating GL texture {}", id);
             gl::BindTexture(gl::TEXTURE_2D, id);
             gl::TexImage2D(
                 gl::TEXTURE_2D,
@@ -55,7 +55,7 @@ impl Texture {
 
             gl::BindTexture(gl::TEXTURE_2D, 0);
 
-            log::info!("Texture loaded: {}", id);
+            log::trace!("Texture loaded: {}", id);
         }
 
         return Texture { id };

@@ -31,7 +31,7 @@ impl Mesh {
             gl::BindBuffer(gl::ARRAY_BUFFER, model.vbo);
             gl::BindVertexArray(model.vao);
 
-            log::info!("Created VBO: {}", model.vbo);
+            log::trace!("Created VBO: {}", model.vbo);
 
             // Pack vertices & normals into single vec
             let mut gl_data: Vec<GLfloat> = Vec::new();

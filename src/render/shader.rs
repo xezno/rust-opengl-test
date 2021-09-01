@@ -99,7 +99,7 @@ impl Shader {
                 String::from_utf8(error_log).unwrap()
             );
         } else {
-            log::info!(
+            log::trace!(
                 "Shader {} ('{}') compilation success",
                 shader_type,
                 shader_path
@@ -135,7 +135,7 @@ impl Shader {
                 name_.set_len(name_length as usize);
                 let name = String::from_utf8(name_).unwrap();
 
-                log::info!(
+                log::trace!(
                     "Shader {}, uniform: {}, location: {}",
                     self.program,
                     name,

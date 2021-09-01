@@ -62,10 +62,15 @@
     },
     {
       "label": "run",
-      "args": ["run", "-v"],
+      "args": ["run", "-v", "--release"],
       "command": "cargo",
       "presentation": {
         "reveal": "always"
+      },
+      "options": {
+        "env": {
+          "RUST_LOG": "trace"
+        }
       },
       "group": {
           "kind": "build",

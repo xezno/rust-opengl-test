@@ -12,7 +12,7 @@ extern crate sdl2;
 use gl::types::GLuint;
 use glam::*;
 use imgui::sys::{igGetContentRegionAvail, igSetNextItemWidth, ImVec2};
-use imgui::{Image, TextureId};
+use imgui::{im_str, Image, TextureId};
 use render::{gfx::*, shader::Shader};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
@@ -24,7 +24,12 @@ pub mod scene;
 pub mod util;
 
 fn main() {
-    crate::util::logger::init().expect("Wasn't able to start logger");
+    {
+        #[cfg(debug_timed)]
+        pretty_env_logger::init_timed();
+        #[cfg(not(debug_timed))]
+        pretty_env_logger::init();
+    }
 
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
@@ -97,6 +102,13 @@ fn main() {
 
     let mut event_pump = sdl.event_pump().unwrap();
     let mut last_time = std::time::Instant::now();
+
+    //
+    // Debug shape
+    //
+    let debug_model = crate::scene::model::Model::new("content/models/sphere.obj");
+    let mut debug_shader = Shader::new("content/shaders/gbuffer_light_debug.glsl");
+    debug_shader.scan_uniforms();
 
     'main: loop {
         //
@@ -181,6 +193,17 @@ fn main() {
         {
             loaded_scene.update(&ui);
             camera.update(&ui);
+
+            // DEBUG: Move lights around a bit
+            for (_, point_light) in loaded_scene.point_lights.iter_mut().enumerate() {
+                let time = (util::time::get_time().total
+                    + point_light.orig_pos.x
+                    + point_light.orig_pos.y
+                    + point_light.orig_pos.z)
+                    * 4.0;
+                let offset = vec3(time.sin() * 0.5, time.cos() * 0.5, time.sin() * 0.5);
+                point_light.transform.position = point_light.orig_pos + offset;
+            }
         }
 
         // Reset input
@@ -207,8 +230,25 @@ fn main() {
                 }
                 gfx_bind_framebuffer(g_buffer);
                 gfx_clear();
-                // Bind gbuffer shader
                 loaded_scene.draw_this(&mut gbuffer_shader, &mut camera);
+
+                // Draw debug
+                {
+                    debug_shader.use_this();
+                    debug_shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
+                    for (_, point_light) in loaded_scene.point_lights.iter().enumerate() {
+                        debug_shader.set_vec3("uCamPos", &camera.position);
+
+                        // Calc model matrix
+                        let mut model_mat = Mat4::from_translation(point_light.transform.position);
+                        model_mat *= Mat4::from_scale(vec3(0.1, 0.1, 0.1));
+                        debug_shader.set_mat4("uModelMat", &model_mat);
+                        debug_shader.set_vec3("vDebugLightCol", &point_light.color);
+                        for mesh in &debug_model.meshes {
+                            mesh.draw_this();
+                        }
+                    }
+                }
             }
 
             // Main lighting pass
@@ -252,6 +292,29 @@ fn main() {
                     );
                     lighting_shader.set_vec3("lightingInfo.vLightColor", &loaded_scene.light.color);
 
+                    // Submit scene point lighting
+                    lighting_shader.set_i32(
+                        "lightingInfo.iPointLightCount",
+                        loaded_scene.point_lights.len() as i32,
+                    );
+
+                    for (i, point_light) in loaded_scene.point_lights.iter().enumerate() {
+                        // log::info!(
+                        //     "Point light {}, pos {}, col {}",
+                        //     i,
+                        //     point_light.transform.position,
+                        //     point_light.color
+                        // );
+                        lighting_shader.set_vec3(
+                            format!("pointLights[{}].vPos", i).as_str(),
+                            &point_light.transform.position,
+                        );
+                        lighting_shader.set_vec3(
+                            format!("pointLights[{}].vColor", i).as_str(),
+                            &point_light.color,
+                        );
+                    }
+
                     // Render quad
                     gfx_quad_render(quad_vao);
 
@@ -289,6 +352,27 @@ fn main() {
                         .uv0([0.0, 1.0])
                         .uv1([1.0, 0.0])
                         .build(&ui);
+                });
+
+                imgui::Window::new(imgui::im_str!("Scene")).build(&ui, || {
+                    for (i, point_light) in loaded_scene.point_lights.iter_mut().enumerate() {
+                        let mut position = point_light.transform.position.to_array();
+                        if ui
+                            .input_float3(im_str!("Point light {} pos", i).as_ref(), &mut position)
+                            .build()
+                        {
+                            point_light.transform.position =
+                                Vec3::new(position[0], position[1], position[2]);
+                        }
+
+                        let mut color = point_light.color.to_array();
+                        if ui
+                            .input_float3(im_str!("Point light {} color", i).as_ref(), &mut color)
+                            .build()
+                        {
+                            point_light.color = Vec3::new(color[0], color[1], color[2]);
+                        }
+                    }
                 });
 
                 imgui_renderer.render(ui);
