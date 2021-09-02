@@ -9,23 +9,6 @@ struct FS_IN {
   vec2 vTexCoords;
 };
 
-// 
-// Basic lighting data
-struct STRUCT_LIGHTING {
-  vec3 vLightDir;
-  vec3 vLightColor;
-};
-
-//
-// Basic material info for this object
-struct STRUCT_MATERIAL {
-  float fSpecular;
-  sampler2D tDiffuseTex;
-};
-
-uniform STRUCT_MATERIAL materialInfo;
-uniform STRUCT_LIGHTING lightingInfo;
-
 // ============================================================================
 //
 // Vertex shader
@@ -68,18 +51,6 @@ uniform vec3 vDebugLightCol;
 layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec4 gNormal;
 layout (location = 2) out vec4 gColorSpec;
-
-float lambert( vec3 normal, vec3 lightDir ) 
-{
-    return max( dot( normal, lightDir ), 0.0 );
-}
-
-float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
-{
-    vec3 reflectDir = reflect( -lightDir, normal );
-    float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), shininess );
-    return spec;
-}
 
 void main()
 {
