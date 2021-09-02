@@ -150,12 +150,19 @@ fn main() {
 
             // DEBUG: Move lights around a bit
             for (_, point_light) in loaded_scene.point_lights.iter_mut().enumerate() {
+                let speed = 2.0;
                 let time = (util::time::get_time().total
                     + point_light.orig_pos.x
                     + point_light.orig_pos.y
                     + point_light.orig_pos.z)
-                    * 4.0;
-                let offset = vec3(time.sin() * 0.5, time.cos() * 0.5, time.sin() * 0.5);
+                    * speed;
+
+                let strength = 4.0;
+                let offset = vec3(
+                    time.sin() * strength,
+                    time.cos() * strength,
+                    time.sin() * 1.0,
+                );
                 point_light.transform.position = point_light.orig_pos + offset;
             }
         }

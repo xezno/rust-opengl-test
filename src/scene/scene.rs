@@ -124,10 +124,10 @@ impl LoadedScene {
     pub fn new() -> Self {
         // TEST: Add a bunch of point lights (HACK/TODO)
         let mut point_lights = Vec::new();
-        for _ in 0..16 {
+        for _ in 0..32 {
             let rand_pos = Vec3::new(
-                rand::thread_rng().gen_range(-20.0..=20.0),
-                rand::thread_rng().gen_range(-20.0..=20.0),
+                rand::thread_rng().gen_range(-15.0..=15.0),
+                rand::thread_rng().gen_range(-15.0..=15.0),
                 rand::thread_rng().gen_range(-2.0..=2.0),
             );
 
