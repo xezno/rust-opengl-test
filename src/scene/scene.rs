@@ -10,7 +10,7 @@ use glam::{Quat, Vec3};
 use imgui::{im_str, ColorPicker, Condition, Ui, Window};
 use log::{info, warn};
 use rand::Rng;
-use random_color::{Color, Luminosity, RandomColor};
+use random_color::{Luminosity, RandomColor};
 use serde_json::*;
 use std::fs;
 
@@ -124,7 +124,7 @@ impl LoadedScene {
     pub fn new() -> Self {
         // TEST: Add a bunch of point lights (HACK/TODO)
         let mut point_lights = Vec::new();
-        for _ in 0..64 {
+        for _ in 0..16 {
             let rand_pos = Vec3::new(
                 rand::thread_rng().gen_range(-20.0..=20.0),
                 rand::thread_rng().gen_range(-20.0..=20.0),
@@ -135,14 +135,13 @@ impl LoadedScene {
             let rand_col = crate::render::color::col_from_hex(
                 RandomColor::new()
                     .luminosity(Luminosity::Bright)
-                    .hue(Color::Blue)
                     .to_hex()
                     .as_str(),
             );
 
             let light = PointLight {
                 transform: Transform::new(rand_pos, Quat::IDENTITY, Vec3::ONE),
-                color: Vec3::new(rand_col.0, rand_col.1, rand_col.2),
+                color: Vec3::new(rand_col.0, rand_col.1, rand_col.2) * 2.0,
                 orig_pos: rand_pos,
             };
             point_lights.push(light);

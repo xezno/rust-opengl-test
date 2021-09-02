@@ -12,9 +12,7 @@ extern crate sdl2;
 use gl::types::GLuint;
 use glam::*;
 use imgui::sys::{
-    igDockSpace, igDockSpaceOverViewport, igGetContentRegionAvail, igGetIDPtr, igGetIDStrStr,
-    igSetNextItemWidth, ImGuiDockNodeFlags_PassthruCentralNode, ImGuiWindowClass_ImGuiWindowClass,
-    ImVec2,
+    igGetContentRegionAvail, igSetNextItemWidth, ImGuiDockNodeFlags_PassthruCentralNode, ImVec2,
 };
 use imgui::{im_str, Image, TextureId};
 use render::{gfx::*, shader::Shader};

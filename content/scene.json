@@ -73,7 +73,7 @@
       },
       "material": {
         "diffuse": "content/textures/test.png",
-        "specular": 0
+        "specular": 32
       }
     },
 
