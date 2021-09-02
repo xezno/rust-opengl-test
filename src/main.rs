@@ -12,7 +12,8 @@ extern crate sdl2;
 use gl::types::GLuint;
 use glam::*;
 use imgui::sys::{
-    igGetContentRegionAvail, igSetNextItemWidth, ImGuiDockNodeFlags_PassthruCentralNode, ImVec2,
+    igGetContentRegionAvail, igSetNextItemWidth, igSetWindowSizeStr,
+    ImGuiDockNodeFlags_PassthruCentralNode, ImVec2,
 };
 use imgui::{im_str, Image, TextureId};
 use render::{gfx::*, shader::Shader};
@@ -107,6 +108,10 @@ fn main() {
     let mut event_pump = sdl.event_pump().unwrap();
     let mut last_time = std::time::Instant::now();
 
+    let mut frames_last_second = 0;
+    let mut fps_calc_time = std::time::Instant::now();
+    let mut fps_counter = 0;
+
     //
     // Debug shape
     //
@@ -196,12 +201,20 @@ fn main() {
 
             // Main lighting pass
             {
+                // TODO: Proper skyboxes
+                let mut sky_color = crate::render::color::col_from_hex("#6495ED");
+                let mut scale = loaded_scene.light.color.x
+                    + loaded_scene.light.color.y
+                    + loaded_scene.light.color.z;
+                scale /= 3.0;
+
+                sky_color.0 *= scale;
+                sky_color.1 *= scale;
+                sky_color.2 *= scale;
+
                 unsafe {
                     gl::Disable(gl::DEPTH_TEST);
-
-                    // TODO: Proper skyboxes
-                    let col = crate::render::color::col_from_hex("#6495ED");
-                    gl::ClearColor(col.0, col.1, col.2, 0.0);
+                    gl::ClearColor(sky_color.0, sky_color.1, sky_color.2, 1.0);
                 }
                 gfx_bind_framebuffer(0);
                 gfx_clear();
@@ -234,6 +247,10 @@ fn main() {
                         &loaded_scene.light.direction.to_euler(EulerRot::XYZ).into(),
                     );
                     lighting_shader.set_vec3("lightingInfo.vLightColor", &loaded_scene.light.color);
+                    lighting_shader.set_vec3(
+                        "lightingInfo.vFogColor",
+                        &Vec3::new(sky_color.0, sky_color.1, sky_color.2),
+                    );
 
                     // Submit scene point lighting
                     lighting_shader.set_i32(
@@ -318,7 +335,6 @@ fn main() {
                                 }
 
                                 let mut color: [f32; 3] = point_light.color.into();
-                                let mut color_alpha: [f32; 4] = [color[0], color[1], color[2], 1.0];
 
                                 if imgui::ColorEdit::new(
                                     im_str!("Point light {} color", i).as_ref(),
@@ -332,8 +348,39 @@ fn main() {
                     }
                 });
 
+                imgui::Window::new(imgui::im_str!("perfOverlay##hidelabel"))
+                    .flags(
+                        imgui::WindowFlags::NO_DECORATION
+                            | imgui::WindowFlags::NO_BACKGROUND
+                            | imgui::WindowFlags::NO_INPUTS,
+                    )
+                    .build(&ui, || {
+                        let draw_list = ui.get_background_draw_list();
+
+                        draw_list.add_text(
+                            [17.0, 17.0],
+                            0x44000000,
+                            im_str!("FPS: {:#?}", frames_last_second),
+                        ); // Shadow
+                        draw_list.add_text(
+                            [16.0, 16.0],
+                            0xFFFFFFFF,
+                            im_str!("FPS: {:#?}", frames_last_second),
+                        );
+
+                        unsafe {
+                            igSetWindowSizeStr(
+                                im_str!("perfOverlay##hidelabel").as_ptr(),
+                                ImVec2::new(0.0, 0.0),
+                                0,
+                            );
+                        }
+                    });
+
                 imgui_renderer.render(ui);
             }
+
+            fps_counter += 1;
             window.gl_swap_window();
         }
 
@@ -343,11 +390,21 @@ fn main() {
         {
             let mut delta = std::time::Instant::now()
                 .duration_since(last_time)
-                .as_millis() as f32;
-            delta /= 1000.0;
+                .as_millis() as f64;
+            delta /= 1000f64;
             update_time(delta);
 
             last_time = std::time::Instant::now();
+
+            if std::time::Instant::now()
+                .duration_since(fps_calc_time)
+                .as_secs()
+                >= 1
+            {
+                fps_calc_time = std::time::Instant::now();
+                frames_last_second = fps_counter;
+                fps_counter = 0;
+            }
         }
     }
 }

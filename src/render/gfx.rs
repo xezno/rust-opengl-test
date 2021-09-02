@@ -6,6 +6,7 @@
 //
 // ============================================================================
 
+use build_timestamp::build_time;
 use gl::types::*;
 use glam::IVec2;
 use std::{ffi::c_void, ptr};
@@ -18,8 +19,27 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
         let mut minor = -1;
         gl::GetIntegerv(gl::MINOR_VERSION, &mut minor);
 
+        let version_triple = version_check::triple().unwrap();
+        let version = version_triple.0;
+        let channel = version_triple.1;
+
+        build_time!("%Y-%m-%d %H:%M:%S");
+
         window
-            .set_title(format!("My Game, OpenGL {}.{}", major, minor).as_str())
+            .set_title(
+                format!(
+                    "{} {} | OpenGL {}.{} | Rust {} {}",
+                    env!("CARGO_PKG_NAME"),
+                    BUILD_TIME,
+                    // |
+                    major,
+                    minor,
+                    // |
+                    version,
+                    channel
+                )
+                .as_str(),
+            )
             .unwrap();
 
         gl::ClipControl(gl::LOWER_LEFT, gl::ZERO_TO_ONE);

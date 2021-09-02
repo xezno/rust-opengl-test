@@ -72,10 +72,10 @@ float lambert( vec3 normal, vec3 lightDir )
     return max( dot( normal, lightDir ), 0.0 );
 }
 
-float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
+float specular( vec3 normal, vec3 lightDir, vec3 viewDir )
 {
     vec3 reflectDir = reflect( -lightDir, normal );
-    float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), shininess );
+    float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), 32 );
     return spec;
 }
 
@@ -98,7 +98,7 @@ void main()
         vec3 normal = normalize( fs_in.vNormal.xyz );
 
         vec3 lambertian = lambert( normal, lightDir ) * diffuseCol.rgb;
-        vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), materialInfo.fSpecular ) ) * lightingInfo.vLightColor;
+        vec3 spec = specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ) ) * lightingInfo.vLightColor * materialInfo.fSpecular;
         vec3 ambient = 0.3 * diffuseCol.rgb;
 
         if ( materialInfo.fSpecular <= 0 )
@@ -113,7 +113,7 @@ void main()
         gColorSpec.rgb = diffuseCol.rgb;
     }
 
-    gColorSpec.a = materialInfo.fSpecular / 512.0;
+    gColorSpec.a = materialInfo.fSpecular;
 }
 
 #endif

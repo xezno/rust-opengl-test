@@ -17,6 +17,7 @@ struct STRUCT_MATERIAL {
 struct STRUCT_LIGHTING {
   vec3 vLightDir;
   vec3 vLightColor;
+  vec3 vFogColor;
 };
 
 #define MAX_LIGHTS 256
@@ -74,10 +75,10 @@ float lambert( vec3 normal, vec3 lightDir )
     return max( dot( normalize( normal ), normalize( lightDir ) ), 0.0 );
 }
 
-float specular( vec3 normal, vec3 lightDir, vec3 viewDir, float shininess )
+float specular( vec3 normal, vec3 lightDir, vec3 viewDir )
 {
     vec3 halfwayDir = normalize( lightDir + viewDir );
-    float spec = pow( max( dot( halfwayDir, normal ), 0.0 ), shininess );
+    float spec = pow( max( dot( halfwayDir, normal ), 0.0 ), 32 );
     return spec;
 }
 
@@ -103,17 +104,24 @@ void main()
 
         float spec = 0;
         if ( fSpecular > 0 )
-            spec = specular( vNormal, vLightDir, vViewDir, fSpecular * 512.0 );
+            spec = specular( vNormal, vLightDir, vViewDir ) * fSpecular;
 
-        // lambertian = 0;
-        // spec = 0;
         vec3 lighting = ( lambertian + spec ) * pointLights[i].vColor;
         float attenuation = 1.0 / ( 32 + length( pointLights[i].vPos - vWorldPos ) );
         
         vColor += lighting * attenuation;
     }
+
+    float z = length( uCamPos - vWorldPos );
+    z = z / ( z + 1.0 );
     
+    float fFog = pow( z, 16 );
+    fFog = clamp( fFog, 0.0, 1.0 );
+
+    vColor = mix( vColor, lightingInfo.vFogColor, fFog );
     vColor = pow( vColor, vec3( 2.2 ) );
+
+    // vColor = vec3( z );
     FragColor = vec4( vColor, 1.0 );
 }
 
