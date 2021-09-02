@@ -21,6 +21,8 @@ use scene::{camera::Camera, scene::Scene};
 use sdl2::sys::SDL_GL_SetAttribute;
 use util::{input::INPUT, screen::update_screen, time::update_time};
 
+use crate::util::screen::get_screen;
+
 pub mod render;
 pub mod scene;
 pub mod util;
@@ -277,7 +279,8 @@ fn main() {
                         igGetContentRegionAvail(&mut size);
                     }
 
-                    let aspect = size.y / 1600.0;
+                    let screen_size = get_screen().size;
+                    let aspect = screen_size.y as f32 / screen_size.x as f32;
                     size.y = size.x * aspect;
 
                     let size_arr = [size.x, size.y];
