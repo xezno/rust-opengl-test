@@ -92,7 +92,7 @@ impl Mesh {
         return model;
     }
 
-    pub fn draw_this(&self) {
+    pub fn render(&self) {
         unsafe {
             gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BindVertexArray(self.vao);

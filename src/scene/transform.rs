@@ -8,9 +8,7 @@
 
 use glam::*;
 
-#[derive(
-    Default, Debug, Clone, Copy, PartialEq, serde_derive::Serialize, serde_derive::Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transform {
     pub position: Vec3,
@@ -26,10 +24,13 @@ impl Transform {
             scale,
         }
     }
-
-    pub const IDENTITY: Self = Transform {
-        position: Vec3::ZERO,
-        rotation: Quat::IDENTITY,
-        scale: Vec3::ONE,
-    };
+}
+impl Default for Transform {
+    fn default() -> Self {
+        return Transform {
+            position: Vec3::ZERO,
+            rotation: Quat::IDENTITY,
+            scale: Vec3::ONE,
+        };
+    }
 }

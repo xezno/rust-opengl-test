@@ -132,7 +132,7 @@ impl LoadedScene {
             );
 
             // Random weighted color
-            let rand_col = crate::render::color::from_hex(
+            let rand_col = crate::render::color::col_from_hex(
                 RandomColor::new()
                     .luminosity(Luminosity::Bright)
                     .hue(Color::Blue)
@@ -158,9 +158,9 @@ impl LoadedScene {
         }
     }
 
-    pub fn draw_this(&self, shader: &mut Shader, camera: &mut Camera) {
+    pub fn render(&self, shader: &mut Shader, camera: &mut Camera) {
         for object in &self.models {
-            object.draw_this(&self, shader, camera);
+            object.render(&self, shader, camera);
         }
     }
 

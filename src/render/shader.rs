@@ -149,7 +149,7 @@ impl Shader {
         }
     }
 
-    pub fn use_this(&self) {
+    pub fn bind(&self) {
         unsafe {
             gl::UseProgram(self.program);
         }

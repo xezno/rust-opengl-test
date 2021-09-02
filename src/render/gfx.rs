@@ -128,6 +128,7 @@ pub fn gfx_quad_setup() -> GLuint {
 
     #[rustfmt::skip]
     let quad_verts: [f32; 20] = [
+        // Positions         // Texture Coords
         -1.0,  1.0, 0.0,    0.0, 1.0,
         -1.0, -1.0, 0.0,    0.0, 0.0,
         1.0,  1.0, 0.0,     1.0, 1.0,

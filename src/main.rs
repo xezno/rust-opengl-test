@@ -169,11 +169,11 @@ fn main() {
                 }
                 gfx_bind_framebuffer(g_buffer);
                 gfx_clear();
-                loaded_scene.draw_this(&mut gbuffer_shader, &mut camera);
+                loaded_scene.render(&mut gbuffer_shader, &mut camera);
 
                 // Draw debug
                 {
-                    debug_shader.use_this();
+                    debug_shader.bind();
                     debug_shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
                     for (_, point_light) in loaded_scene.point_lights.iter().enumerate() {
                         debug_shader.set_vec3("uCamPos", &camera.position);
@@ -184,7 +184,7 @@ fn main() {
                         debug_shader.set_mat4("uModelMat", &model_mat);
                         debug_shader.set_vec3("vDebugLightCol", &point_light.color);
                         for mesh in &debug_model.meshes {
-                            mesh.draw_this();
+                            mesh.render();
                         }
                     }
                 }
@@ -196,7 +196,7 @@ fn main() {
                     gl::Disable(gl::DEPTH_TEST);
 
                     // TODO: Proper skyboxes
-                    let col = crate::render::color::from_hex("#6495ED");
+                    let col = crate::render::color::col_from_hex("#6495ED");
                     gl::ClearColor(col.0, col.1, col.2, 0.0);
                 }
                 gfx_bind_framebuffer(0);
@@ -206,7 +206,7 @@ fn main() {
                     gl::Enable(gl::FRAMEBUFFER_SRGB);
 
                     // Bind lighting pass shader
-                    lighting_shader.use_this();
+                    lighting_shader.bind();
 
                     // Bind gbuffer textures
                     gl::ActiveTexture(gl::TEXTURE0);

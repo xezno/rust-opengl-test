@@ -79,12 +79,6 @@ impl OrbitCamera for Camera {
                     ui.text(format!("Mouse pos: {}", INPUT.mouse.position));
                     ui.text(format!("Mouse delta: {}", INPUT.mouse.delta));
 
-                    // ui.text(format!("Camera pos: {:.1}", self.position));
-                    // ui.text(format!(
-                    //     "Camera rot euler: {}",
-                    //     serde_json::to_string(&self.eulerRot).unwrap()
-                    // ));
-
                     ui.text(format!("Camera fov: {:.1}", self.fov));
                     ui.text(format!("Camera wish fov: {:.1}", self.wish_fov));
 
@@ -99,13 +93,6 @@ impl OrbitCamera for Camera {
         }
 
         unsafe {
-            // Set position
-            // self.wish_fov -= INPUT.mouse.wheel * 5.0;
-            // self.wish_fov = self.wish_fov.clamp(50f32, 110f32);
-
-            // self.fov = self.fov.lerp(self.wish_fov, TIME.delta * 10.0);
-            // self.fov = self.fov.clamp(50f32, 110f32);
-
             self.wish_orbit_distance -= INPUT.mouse.wheel * 2.0;
             self.wish_orbit_distance = self.wish_orbit_distance.clamp(0.0, 100000.0);
 
@@ -190,6 +177,7 @@ impl OrbitCamera for Camera {
 
         self.view_mat = Mat4::look_at_rh(self.position, self.look_at, Vec3::Z);
 
+        // TODO: (re-)implement reversed-z properly
         // Camera::create_perspective_reversed_z(self.fov.to_radians(), aspect_ratio, self.z_near);
         self.proj_mat =
             Mat4::perspective_rh(self.fov.to_radians(), aspect_ratio, self.z_near, self.z_far);

@@ -33,8 +33,8 @@ impl Model {
     pub fn new(obj_path: &str) -> Model {
         let mut model = Model {
             meshes: Vec::new(),
-            transform: Transform::IDENTITY,
-            material: Material::new(),
+            transform: Transform::default(),
+            material: Material::default(),
 
             diffuse_texture: Texture::default(),
         };
@@ -113,9 +113,9 @@ impl Model {
         return model;
     }
 
-    pub fn draw_this(&self, scene: &LoadedScene, shader: &mut Shader, camera: &mut Camera) {
+    pub fn render(&self, scene: &LoadedScene, shader: &mut Shader, camera: &mut Camera) {
         for mesh in &self.meshes {
-            shader.use_this();
+            shader.bind();
             {
                 // Calc model matrix
                 let mut model_mat = Mat4::from_translation(self.transform.position);
@@ -139,8 +139,8 @@ impl Model {
 
                 shader.set_i32("tDiffuseTex", 0);
             }
-            self.diffuse_texture.use_this();
-            mesh.draw_this();
+            self.diffuse_texture.bind();
+            mesh.render();
         }
     }
 }

@@ -61,7 +61,7 @@ impl Texture {
         return Texture { id };
     }
 
-    pub fn use_this(&self) {
+    pub fn bind(&self) {
         unsafe {
             gl::ActiveTexture(gl::TEXTURE0);
             gl::BindTexture(gl::TEXTURE_2D, self.id);
