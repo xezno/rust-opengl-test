@@ -11,7 +11,11 @@ extern crate sdl2;
 
 use gl::types::GLuint;
 use glam::*;
-use imgui::sys::{igGetContentRegionAvail, igSetNextItemWidth, ImVec2};
+use imgui::sys::{
+    igDockSpace, igDockSpaceOverViewport, igGetContentRegionAvail, igGetIDPtr, igGetIDStrStr,
+    igSetNextItemWidth, ImGuiDockNodeFlags_PassthruCentralNode, ImGuiWindowClass_ImGuiWindowClass,
+    ImVec2,
+};
 use imgui::{im_str, Image, TextureId};
 use render::{gfx::*, shader::Shader};
 use scene::orbitcamera::OrbitCamera;
@@ -259,18 +263,27 @@ fn main() {
             {
                 imgui_sdl2.prepare_render(&ui, &window);
 
-                let mut size: ImVec2 = ImVec2::new(0.0, 0.0);
+                // Dock space
                 unsafe {
-                    igSetNextItemWidth(-1.0);
-                    igGetContentRegionAvail(&mut size);
+                    imgui::sys::igDockSpaceOverViewport(
+                        imgui::sys::igGetMainViewport(),
+                        ImGuiDockNodeFlags_PassthruCentralNode as i32,
+                        ::std::ptr::null::<imgui::sys::ImGuiWindowClass>(),
+                    );
                 }
 
-                let aspect = size.y / 900.0;
-                size.y = size.x * aspect;
-
-                let size_arr = [size.x, size.y];
-
                 imgui::Window::new(imgui::im_str!("G-Buffers")).build(&ui, || {
+                    let mut size: ImVec2 = ImVec2::new(0.0, 0.0);
+                    unsafe {
+                        igSetNextItemWidth(-1.0);
+                        igGetContentRegionAvail(&mut size);
+                    }
+
+                    let aspect = size.y / 1600.0;
+                    size.y = size.x * aspect;
+
+                    let size_arr = [size.x, size.y];
+
                     Image::new(TextureId::new(g_position as usize), size_arr)
                         .uv0([0.0, 1.0])
                         .uv1([1.0, 0.0])

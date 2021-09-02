@@ -13,6 +13,11 @@ pub fn imgui_init() -> imgui::Context {
         size_pixels: 14.0,
     }]);
 
+    let io = imgui.io_mut();
+    io.config_docking_with_shift = true;
+    io.config_docking_always_tab_bar = true;
+    io.config_flags |= imgui::ConfigFlags::DOCKING_ENABLE;
+
     // MESS AHEAD
     imgui.style_mut().colors[ImGuiCol_Text as usize] = [1.00, 1.00, 1.00, 1.00];
     imgui.style_mut().colors[ImGuiCol_TextDisabled as usize] = [0.50, 0.50, 0.50, 1.00];
