@@ -91,13 +91,11 @@ void main()
     
     if ( bDraw )
         discard;
-
-    // We already calculated the main directional lighting in the gbuffer stage
-    // so we can just use that.
-
-    // We'll also calculate the lighting for each point light in the scene
-    vec3 vViewDir = normalize(uCamPos - vWorldPos);
     
+    vec3 vViewDir = normalize(uCamPos - vWorldPos);
+
+    
+    // Calculate the lighting for each point light in the scene
     for ( int i = 0; i < MAX_LIGHTS; i++ )
     {
         vec3 vLightDir = normalize( pointLights[i].vPos - vWorldPos );
@@ -115,6 +113,7 @@ void main()
         vColor += lighting * attenuation;
     }
     
+    vColor = pow( vColor, vec3( 2.2 ) );
     FragColor = vec4( vColor, 1.0 );
 }
 

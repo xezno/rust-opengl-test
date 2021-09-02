@@ -1,3 +1,11 @@
+// ============================================================================
+//
+// imgui.rs
+//
+// Purpose: ImGUI initialization code
+//
+// ============================================================================
+
 use imgui::{sys::*, FontConfig, FontSource};
 
 pub fn imgui_init() -> imgui::Context {

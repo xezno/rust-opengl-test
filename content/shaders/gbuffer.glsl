@@ -99,7 +99,7 @@ void main()
 
         vec3 lambertian = lambert( normal, lightDir ) * diffuseCol.rgb;
         vec3 spec = ( specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ), materialInfo.fSpecular ) ) * lightingInfo.vLightColor;
-        vec3 ambient = 0.4 * diffuseCol.rgb;
+        vec3 ambient = 0.3 * diffuseCol.rgb;
 
         if ( materialInfo.fSpecular <= 0 )
         {
@@ -109,10 +109,7 @@ void main()
         vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;
         lighting += ambient * normalize( lightingInfo.vLightColor );
 
-        lighting = pow( lighting, vec3( 2.2 ) );
         diffuseCol = vec4( lighting, 1.0 );
-
-
         gColorSpec.rgb = diffuseCol.rgb;
     }
 

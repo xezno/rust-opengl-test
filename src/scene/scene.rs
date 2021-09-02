@@ -7,7 +7,7 @@
 // ============================================================================
 
 use glam::{Quat, Vec3};
-use imgui::{im_str, ColorPicker, Condition, Ui, Window};
+use imgui::{im_str, ColorEdit, Condition, Ui, Window};
 use log::{info, warn};
 use rand::Rng;
 use random_color::{Luminosity, RandomColor};
@@ -168,9 +168,8 @@ impl LoadedScene {
             .size([300.0, 110.0], Condition::FirstUseEver)
             .build(&ui, || {
                 let mut color: [f32; 3] = self.light.color.into();
-                let color_picker = ColorPicker::new(im_str!("Light Color"), &mut color);
 
-                if color_picker.build(&ui) {
+                if ColorEdit::new(im_str!("Light Color"), &mut color).build(&ui) {
                     self.light.color = color.into();
                 }
 
@@ -193,8 +192,6 @@ impl LoadedScene {
                         direction_array[2].to_radians(),
                     );
                 }
-
-                ui.text(im_str!("{:?}", self.light.direction));
             });
     }
 }

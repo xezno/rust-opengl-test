@@ -303,22 +303,32 @@ fn main() {
 
                 imgui::Window::new(imgui::im_str!("Scene")).build(&ui, || {
                     for (i, point_light) in loaded_scene.point_lights.iter_mut().enumerate() {
-                        let mut position = point_light.transform.position.to_array();
-                        if ui
-                            .input_float3(im_str!("Point light {} pos", i).as_ref(), &mut position)
-                            .build()
-                        {
-                            point_light.transform.position =
-                                Vec3::new(position[0], position[1], position[2]);
-                        }
+                        imgui::TreeNode::new(&imgui::ImString::new(format!("Point Light {:?}", i)))
+                            .build(&ui, || {
+                                let mut position = point_light.transform.position.to_array();
+                                if ui
+                                    .input_float3(
+                                        im_str!("Point light {} pos", i).as_ref(),
+                                        &mut position,
+                                    )
+                                    .build()
+                                {
+                                    point_light.transform.position =
+                                        Vec3::new(position[0], position[1], position[2]);
+                                }
 
-                        let mut color = point_light.color.to_array();
-                        if ui
-                            .input_float3(im_str!("Point light {} color", i).as_ref(), &mut color)
-                            .build()
-                        {
-                            point_light.color = Vec3::new(color[0], color[1], color[2]);
-                        }
+                                let mut color: [f32; 3] = point_light.color.into();
+                                let mut color_alpha: [f32; 4] = [color[0], color[1], color[2], 1.0];
+
+                                if imgui::ColorEdit::new(
+                                    im_str!("Point light {} color", i).as_ref(),
+                                    &mut color,
+                                )
+                                .build(&ui)
+                                {
+                                    point_light.color = color.into();
+                                }
+                            });
                     }
                 });
 
