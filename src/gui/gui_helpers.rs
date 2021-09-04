@@ -6,10 +6,12 @@
 //
 // ============================================================================
 
+use gl::types::GLuint;
 use glam::{Quat, Vec3};
+use imgui::sys::*;
 use imgui::*;
 
-use crate::scene::scene::LoadedScene;
+use crate::{scene::scene::LoadedScene, util::screen::get_screen};
 
 pub fn gui_scene_hierarchy(ui: &Ui, scene: &mut LoadedScene) {
     let mut opened = true;
@@ -85,4 +87,71 @@ pub fn gui_scene_hierarchy(ui: &Ui, scene: &mut LoadedScene) {
                 );
             }
         });
+}
+
+pub fn gui_perf_overlay(ui: &Ui, frames_last_second: i32) {
+    imgui::Window::new(imgui::im_str!("perfOverlay##hidelabel"))
+        .flags(
+            imgui::WindowFlags::NO_DECORATION
+                | imgui::WindowFlags::NO_BACKGROUND
+                | imgui::WindowFlags::NO_INPUTS,
+        )
+        .build(&ui, || {
+            let draw_list = ui.get_background_draw_list();
+
+            draw_list.add_text(
+                [17.0, 17.0],
+                0x44000000,
+                im_str!("FPS: {:#?}", frames_last_second),
+            ); // Shadow
+            draw_list.add_text(
+                [16.0, 16.0],
+                0xFFFFFFFF,
+                im_str!("FPS: {:#?}", frames_last_second),
+            );
+
+            unsafe {
+                igSetWindowSizeStr(
+                    im_str!("perfOverlay##hidelabel").as_ptr(),
+                    ImVec2::new(0.0, 0.0),
+                    0,
+                );
+            }
+        });
+}
+
+pub fn gui_g_buffers(
+    ui: &imgui::Ui,
+    g_position: &GLuint,
+    g_normal: &GLuint,
+    g_color_spec: &GLuint,
+) -> () {
+    imgui::Window::new(imgui::im_str!("G-Buffers")).build(&ui, || {
+        let mut size: ImVec2 = ImVec2::new(0.0, 0.0);
+        unsafe {
+            igSetNextItemWidth(-1.0);
+            igGetContentRegionAvail(&mut size);
+        }
+
+        let screen_size = get_screen().size;
+        let aspect = screen_size.y as f32 / screen_size.x as f32;
+        size.y = size.x * aspect;
+
+        let size_arr = [size.x, size.y];
+
+        Image::new(TextureId::new(g_position.clone() as usize), size_arr)
+            .uv0([0.0, 1.0])
+            .uv1([1.0, 0.0])
+            .build(&ui);
+
+        Image::new(TextureId::new(g_normal.clone() as usize), size_arr)
+            .uv0([0.0, 1.0])
+            .uv1([1.0, 0.0])
+            .build(&ui);
+
+        Image::new(TextureId::new(g_color_spec.clone() as usize), size_arr)
+            .uv0([0.0, 1.0])
+            .uv1([1.0, 0.0])
+            .build(&ui);
+    });
 }

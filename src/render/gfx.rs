@@ -43,6 +43,10 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
             .unwrap();
 
         gl::ClipControl(gl::LOWER_LEFT, gl::ZERO_TO_ONE);
+
+        let window_icon = sdl2::surface::Surface::load_bmp("content/suzanne.bmp").unwrap();
+        window.set_icon(&window_icon);
+
         gl::Enable(gl::MULTISAMPLE);
         gl::Enable(gl::CULL_FACE);
     }

@@ -2,36 +2,6 @@
   "type": "scene",
   "name": "scene_1",
 
-  "_objects": [{
-      "type": "model",
-      "name": "GLTF Mesh",
-      "path": "content/models/monkey.gltf",
-      "transform": {
-        "position": [0.0, 0.0, 0.0],
-        "rotation": [0.0, 0.0, 0.0, 1.0],
-        "scale": [1.0, 1.0, 1.0]
-      },
-      "material": {
-        "diffuse": "content/textures/test.png",
-        "specular": 0.25
-      }
-    },
-    {
-      "type": "model",
-      "name": "Floor",
-      "path": "content/models/cube.gltf",
-      "transform": {
-        "position": [0.0, 0.0, -4.0],
-        "rotation": [0.0, 0.0, 0.0, 1.0],
-        "scale": [50.0, 50.0, 0.25]
-      },
-      "material": {
-        "diffuse": "content/textures/test.png",
-        "specular": 1.0
-      }
-    }
-  ],
-
   "objects": [{
     "type": "model",
     "name": "Sponza Scene",

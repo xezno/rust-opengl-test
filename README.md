@@ -1,10 +1,17 @@
 # Rust OpenGL Test
 
-Terrible Rust rendering thing.
+Rust rendering thing
 
 ## Screenshots
 
 ![Monkeys](https://cdn.discordapp.com/attachments/839155256964284459/881512752491941938/unknown.png)
+
+## Instructions
+
+Compile and run with `cargo run`.
+
+For renderdoc, run with `cargo run --cfg renderdoc_enabled`. For timed debug logging, run with `cargo run --cfg debug_timed`.
+Or combine both. Or don't.
 
 ## Things to note
 

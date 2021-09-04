@@ -11,20 +11,21 @@ extern crate sdl2;
 
 use gl::types::GLuint;
 use glam::*;
-use imgui::sys::{
-    igGetContentRegionAvail, igSetNextItemWidth, igSetWindowSizeStr,
-    ImGuiDockNodeFlags_PassthruCentralNode, ImVec2,
-};
-use imgui::{im_str, Image, TextureId};
+use gui::gui_helpers::gui_g_buffers;
+use imgui::sys::ImGuiDockNodeFlags_PassthruCentralNode;
+
 use render::{gfx::*, shader::Shader};
+
+#[cfg(renderdoc_enabled)]
 use renderdoc::{RenderDoc, V110};
+
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
+
 use sdl2::sys::SDL_GL_SetAttribute;
 use util::{input::INPUT, screen::update_screen, time::update_time};
 
-use crate::gui::scene_hierarchy::gui_scene_hierarchy;
-use crate::util::screen::get_screen;
+use crate::gui::gui_helpers::{gui_perf_overlay, gui_scene_hierarchy};
 
 pub mod gui;
 pub mod render;
@@ -39,6 +40,7 @@ fn main() {
         pretty_env_logger::init();
     }
 
+    #[cfg(renderdoc_enabled)]
     let _rd: RenderDoc<V110> = RenderDoc::new().expect("Unable to connect");
 
     let sdl = sdl2::init().unwrap();
@@ -90,14 +92,12 @@ fn main() {
     gfx_setup(&mut window);
 
     //
-    // Gbuf setup
+    // Gbuffer setup
     //
     let mut g_position: GLuint = 0;
     let mut g_normal: GLuint = 0;
     let mut g_color_spec: GLuint = 0;
     let mut g_buffer = gfx_setup_gbuffer(&mut g_position, &mut g_normal, &mut g_color_spec);
-
-    let mut camera: Camera = OrbitCamera::new();
     let mut gbuffer_shader = Shader::new("content/shaders/gbuffer.glsl");
     gbuffer_shader.scan_uniforms();
     let mut lighting_shader = Shader::new("content/shaders/lighting.glsl");
@@ -108,13 +108,20 @@ fn main() {
     //
     let scene = Scene::new("content/scene.json");
     let mut loaded_scene = scene.load();
+    let mut camera: Camera = OrbitCamera::new();
     let quad_vao = gfx_quad_setup();
 
+    //
+    // Events
+    //
     let mut event_pump = sdl.event_pump().unwrap();
-    let mut last_time = std::time::Instant::now();
+    let mut last_render = std::time::Instant::now();
 
+    //
+    // Fps counter
+    //
     let mut frames_last_second = 0;
-    let mut fps_calc_time = std::time::Instant::now();
+    let mut last_fps_calc = std::time::Instant::now();
     let mut fps_counter = 0;
 
     //
@@ -301,65 +308,9 @@ fn main() {
                     );
                 }
 
-                imgui::Window::new(imgui::im_str!("G-Buffers")).build(&ui, || {
-                    let mut size: ImVec2 = ImVec2::new(0.0, 0.0);
-                    unsafe {
-                        igSetNextItemWidth(-1.0);
-                        igGetContentRegionAvail(&mut size);
-                    }
-
-                    let screen_size = get_screen().size;
-                    let aspect = screen_size.y as f32 / screen_size.x as f32;
-                    size.y = size.x * aspect;
-
-                    let size_arr = [size.x, size.y];
-
-                    Image::new(TextureId::new(g_position as usize), size_arr)
-                        .uv0([0.0, 1.0])
-                        .uv1([1.0, 0.0])
-                        .build(&ui);
-
-                    Image::new(TextureId::new(g_normal as usize), size_arr)
-                        .uv0([0.0, 1.0])
-                        .uv1([1.0, 0.0])
-                        .build(&ui);
-
-                    Image::new(TextureId::new(g_color_spec as usize), size_arr)
-                        .uv0([0.0, 1.0])
-                        .uv1([1.0, 0.0])
-                        .build(&ui);
-                });
-
-                imgui::Window::new(imgui::im_str!("perfOverlay##hidelabel"))
-                    .flags(
-                        imgui::WindowFlags::NO_DECORATION
-                            | imgui::WindowFlags::NO_BACKGROUND
-                            | imgui::WindowFlags::NO_INPUTS,
-                    )
-                    .build(&ui, || {
-                        let draw_list = ui.get_background_draw_list();
-
-                        draw_list.add_text(
-                            [17.0, 17.0],
-                            0x44000000,
-                            im_str!("FPS: {:#?}", frames_last_second),
-                        ); // Shadow
-                        draw_list.add_text(
-                            [16.0, 16.0],
-                            0xFFFFFFFF,
-                            im_str!("FPS: {:#?}", frames_last_second),
-                        );
-
-                        unsafe {
-                            igSetWindowSizeStr(
-                                im_str!("perfOverlay##hidelabel").as_ptr(),
-                                ImVec2::new(0.0, 0.0),
-                                0,
-                            );
-                        }
-                    });
-
                 gui_scene_hierarchy(&ui, &mut loaded_scene);
+                gui_perf_overlay(&ui, frames_last_second);
+                gui_g_buffers(&ui, &g_position, &g_normal, &g_color_spec);
 
                 imgui_renderer.render(ui);
             }
@@ -373,19 +324,19 @@ fn main() {
         //
         {
             let mut delta = std::time::Instant::now()
-                .duration_since(last_time)
+                .duration_since(last_render)
                 .as_millis() as f64;
             delta /= 1000f64;
             update_time(delta);
 
-            last_time = std::time::Instant::now();
+            last_render = std::time::Instant::now();
 
             if std::time::Instant::now()
-                .duration_since(fps_calc_time)
+                .duration_since(last_fps_calc)
                 .as_secs()
                 >= 1
             {
-                fps_calc_time = std::time::Instant::now();
+                last_fps_calc = std::time::Instant::now();
                 frames_last_second = fps_counter;
                 fps_counter = 0;
             }
@@ -457,10 +408,6 @@ fn handle_input(
                 }
                 _ => {}
             },
-
-            //
-            //
-            //
             _ => {}
         }
     }
