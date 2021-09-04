@@ -99,7 +99,7 @@ fn process_gltf_node(
 fn process_gltf_mesh(
     mesh: &gltf::Mesh,
     model: &mut Model,
-    gltf: &gltf::Document,
+    _gltf: &gltf::Document,
     buffers: &[gltf::buffer::Data],
 ) -> () {
     let mut gl_vertices: Vec<GLfloat> = Vec::new();

@@ -17,7 +17,7 @@ use imgui::sys::{
 };
 use imgui::{im_str, Image, TextureId};
 use render::{gfx::*, shader::Shader};
-use renderdoc::{RenderDoc, V100, V110};
+use renderdoc::{RenderDoc, V110};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
 use sdl2::sys::SDL_GL_SetAttribute;
@@ -38,7 +38,8 @@ fn main() {
         #[cfg(not(debug_timed))]
         pretty_env_logger::init();
     }
-    let mut rd: RenderDoc<V110> = RenderDoc::new().expect("Unable to connect");
+
+    let _rd: RenderDoc<V110> = RenderDoc::new().expect("Unable to connect");
 
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
