@@ -39,7 +39,7 @@ impl OrbitCamera for Camera {
             look_at: Vec3::ZERO,
 
             z_near: 0.01,
-            z_far: 100.0,
+            z_far: 2048.0,
 
             view_mat: Mat4::IDENTITY,
             proj_mat: Mat4::IDENTITY,

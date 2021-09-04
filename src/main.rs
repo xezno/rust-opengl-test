@@ -17,13 +17,16 @@ use imgui::sys::{
 };
 use imgui::{im_str, Image, TextureId};
 use render::{gfx::*, shader::Shader};
+use renderdoc::{RenderDoc, V100, V110};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
 use sdl2::sys::SDL_GL_SetAttribute;
 use util::{input::INPUT, screen::update_screen, time::update_time};
 
+use crate::gui::scene_hierarchy::gui_scene_hierarchy;
 use crate::util::screen::get_screen;
 
+pub mod gui;
 pub mod render;
 pub mod scene;
 pub mod util;
@@ -35,6 +38,7 @@ fn main() {
         #[cfg(not(debug_timed))]
         pretty_env_logger::init();
     }
+    let mut rd: RenderDoc<V110> = RenderDoc::new().expect("Unable to connect");
 
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
@@ -150,7 +154,7 @@ fn main() {
 
             // DEBUG: Move lights around a bit
             for (_, point_light) in loaded_scene.point_lights.iter_mut().enumerate() {
-                let speed = 2.0;
+                let speed = 8.0;
                 let time = (util::time::get_time().total
                     + point_light.orig_pos.x
                     + point_light.orig_pos.y
@@ -325,36 +329,6 @@ fn main() {
                         .build(&ui);
                 });
 
-                imgui::Window::new(imgui::im_str!("Scene")).build(&ui, || {
-                    for (i, point_light) in loaded_scene.point_lights.iter_mut().enumerate() {
-                        imgui::TreeNode::new(&imgui::ImString::new(format!("Point Light {:?}", i)))
-                            .build(&ui, || {
-                                let mut position = point_light.transform.position.to_array();
-                                if ui
-                                    .input_float3(
-                                        im_str!("Point light {} pos", i).as_ref(),
-                                        &mut position,
-                                    )
-                                    .build()
-                                {
-                                    point_light.transform.position =
-                                        Vec3::new(position[0], position[1], position[2]);
-                                }
-
-                                let mut color: [f32; 3] = point_light.color.into();
-
-                                if imgui::ColorEdit::new(
-                                    im_str!("Point light {} color", i).as_ref(),
-                                    &mut color,
-                                )
-                                .build(&ui)
-                                {
-                                    point_light.color = color.into();
-                                }
-                            });
-                    }
-                });
-
                 imgui::Window::new(imgui::im_str!("perfOverlay##hidelabel"))
                     .flags(
                         imgui::WindowFlags::NO_DECORATION
@@ -383,6 +357,8 @@ fn main() {
                             );
                         }
                     });
+
+                gui_scene_hierarchy(&ui, &mut loaded_scene);
 
                 imgui_renderer.render(ui);
             }

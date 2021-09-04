@@ -2,13 +2,12 @@
   "type": "scene",
   "name": "scene_1",
 
-  "objects": [
-    {
+  "_objects": [{
       "type": "model",
-      "name": "monkey 1",
+      "name": "GLTF Mesh",
       "path": "content/models/monkey.gltf",
       "transform": {
-        "position": [2.0, 0.0, 0.0],
+        "position": [0.0, 0.0, 0.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
         "scale": [1.0, 1.0, 1.0]
       },
@@ -19,105 +18,32 @@
     },
     {
       "type": "model",
-      "name": "monkey 2",
-      "path": "content/models/monkey.gltf",
-      "transform": {
-        "position": [-2.0, 0.0, 0.0],
-        "rotation": [0.0, 0.0, 0.0, 1.0],
-        "scale": [1.0, 1.0, 1.0]
-      },
-      "material": {
-        "diffuse": "content/textures/test.png",
-        "specular": 0
-      }
-    },
-
-    {
-      "type": "model",
-      "name": "monkey 3",
-      "path": "content/models/monkey.gltf",
-      "transform": {
-        "position": [0.0, 0.0, 1.0],
-        "rotation": [0.0, 0.0, 0.0, 1.0],
-        "scale": [1.0, 1.0, 1.0]
-      },
-      "material": {
-        "diffuse": "content/textures/test.png",
-        "specular": 0.5
-      }
-    },
-
-    {
-      "type": "model",
-      "name": "monkey 4",
-      "path": "content/models/monkey.gltf",
-      "transform": {
-        "position": [0.0, 0.0, -1.0],
-        "rotation": [0.0, 0.0, 0.0, 1.0],
-        "scale": [1.0, 1.0, 1.0]
-      },
-      "material": {
-        "diffuse": "content/textures/test.png",
-        "specular": 1
-      }
-    },
-
-    {
-      "type": "model",
-      "name": "floor",
+      "name": "Floor",
       "path": "content/models/cube.gltf",
       "transform": {
         "position": [0.0, 0.0, -4.0],
-        "rotation": [ 0, 0, 0, 1 ],
-        "scale": [20.0, 20.0, 0.1]
+        "rotation": [0.0, 0.0, 0.0, 1.0],
+        "scale": [50.0, 50.0, 0.25]
       },
       "material": {
         "diffuse": "content/textures/test.png",
-        "specular": 1
-      }
-    },
-
-    {
-      "type": "model",
-      "name": "Left Ball",
-      "path": "content/models/sphere.gltf",
-      "transform": {
-        "position": [-1.0, 0.0, 10.0],
-        "rotation": [ 0, 0, 0, 1 ],
-        "scale": [0.2, 0.2, 0.2]
-      },
-      "material": {
-        "diffuse": "content/textures/missing.png",
-        "specular": 1
-      },
-      "phys": "ball"
-    },
-
-    {
-      "type": "model",
-      "name": "Right Ball",
-      "path": "content/models/sphere.gltf",
-      "transform": {
-        "position": [1.0, 0.0, 10.0],
-        "rotation": [ 0, 0, 0, 1 ],
-        "scale": [0.2, 0.2, 0.2]
-      },
-      "material": {    
-        "diffuse": "content/textures/missing.png",
-        "specular": 1
-      },
-      "phys": "ball"
-    },
-
-    {
-      "type": "light_sun",
-      "name": "directional light 1",
-      "transform": {
-        "position": [0.0, 0.0, 0.0],
-        "rotation": [ 0.1464466, 0.3535534, 0.3535534, 0.8535534 ],
-        "scale": [1.0, 1.0, 1.0]
+        "specular": 1.0
       }
     }
-  ]
+  ],
 
+  "objects": [{
+    "type": "model",
+    "name": "Sponza Scene",
+    "path": "content/models/sponza/glTF/sponza.gltf",
+    "transform": {
+      "position": [0.0, 0.0, 0.0],
+      "rotation": [0.7071068, 0, 0, 0.7071068],
+      "scale": [0.05, 0.05, 0.05]
+    },
+    "material": {
+      "diffuse": "content/textures/test.png",
+      "specular": 0.5
+    }
+  }]
 }

@@ -118,7 +118,7 @@ void main()
     float fFog = pow( z, 16 );
     fFog = clamp( fFog, 0.0, 1.0 );
 
-    vColor = mix( vColor, lightingInfo.vFogColor, fFog );
+    // vColor = mix( vColor, lightingInfo.vFogColor, fFog );
     vColor = pow( vColor, vec3( 2.2 ) );
 
     // vColor = vec3( z );

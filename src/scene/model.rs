@@ -2,14 +2,13 @@
 //
 // model.rs
 //
-// Purpose: Loads meshes from an OBJ file.
+// Purpose: Loads meshes from a GLTF file.
 //
 // ============================================================================
 
 use glam::*;
 
 use gl::types::*;
-use gltf::{mesh::util::ReadTexCoords, Gltf};
 
 use super::{camera::Camera, scene::LoadedScene, transform::Transform};
 use crate::render::{material::Material, mesh::Mesh, shader::Shader, texture::Texture};
@@ -44,63 +43,8 @@ impl Model {
 
         let (gltf, buffers, _) = gltf::import(&std::path::Path::new(gltf_path)).unwrap();
 
-        let mut gl_vertices: Vec<GLfloat> = Vec::new();
-        let mut gl_normals: Vec<GLfloat> = Vec::new();
-        let mut gl_texcoords: Vec<GLfloat> = Vec::new();
-        let mut gl_indices: Vec<GLuint> = Vec::new();
-
-        for mesh in gltf.meshes() {
-            for primitive in mesh.primitives() {
-                let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-
-                let mut positions = reader.read_positions().unwrap();
-                let mut normals = reader.read_normals().unwrap();
-
-                let mut indices = reader.read_indices().unwrap().clone().into_u32();
-
-                let texcoords = reader.read_tex_coords(0).unwrap();
-
-                log::trace!("Mesh has {:?} positions", positions.len());
-
-                for _ in 0..positions.len() {
-                    let wrapped_position = positions.nth(0);
-                    let wrapped_normal = normals.nth(0);
-                    let wrapped_texcoord = texcoords.clone().into_f32().nth(0);
-
-                    if !wrapped_position.is_none() {
-                        let position = wrapped_position.unwrap();
-                        gl_vertices.push(position[0]);
-                        gl_vertices.push(position[1]);
-                        gl_vertices.push(-position[2]); // Flip height
-
-                        if !wrapped_normal.is_none() {
-                            let normal = wrapped_normal.unwrap();
-                            gl_normals.push(normal[0]);
-                            gl_normals.push(normal[1]);
-                            gl_normals.push(-normal[2]); // Flip height
-                        }
-
-                        if !wrapped_texcoord.is_none() {
-                            let texcoord = wrapped_texcoord.unwrap();
-
-                            gl_texcoords.push(texcoord[0]);
-                            gl_texcoords.push(texcoord[1]);
-                        }
-                    }
-                }
-
-                for _ in 0..indices.len() {
-                    let wrapped_index = indices.nth(0);
-                    if !wrapped_index.is_none() {
-                        let index = wrapped_index.unwrap();
-                        gl_indices.push(index as GLuint);
-                    }
-                }
-            }
-        }
-
-        let mesh = Mesh::new(gl_vertices, gl_normals, gl_texcoords, gl_indices);
-        model.meshes.push(mesh);
+        let scene = gltf.default_scene().unwrap();
+        process_gltf_node(scene.nodes().next().unwrap(), &mut model, &gltf, &buffers);
 
         return model;
     }
@@ -134,5 +78,75 @@ impl Model {
             self.diffuse_texture.bind();
             mesh.render();
         }
+    }
+}
+
+fn process_gltf_node(
+    node: gltf::Node,
+    model: &mut Model,
+    gltf: &gltf::Document,
+    buffers: &[gltf::buffer::Data],
+) -> () {
+    if node.mesh().is_some() {
+        process_gltf_mesh(&node.mesh().unwrap(), model, gltf, buffers);
+    }
+
+    for child in node.children() {
+        process_gltf_node(child, model, gltf, buffers);
+    }
+}
+
+fn process_gltf_mesh(
+    mesh: &gltf::Mesh,
+    model: &mut Model,
+    gltf: &gltf::Document,
+    buffers: &[gltf::buffer::Data],
+) -> () {
+    for primitive in mesh.primitives() {
+        let mut gl_vertices: Vec<GLfloat> = Vec::new();
+        let mut gl_normals: Vec<GLfloat> = Vec::new();
+        let mut gl_texcoords: Vec<GLfloat> = Vec::new();
+        let mut gl_indices: Vec<GLuint> = Vec::new();
+        let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+
+        let positions = reader.read_positions().unwrap().collect::<Vec<[f32; 3]>>();
+        let normals = reader.read_normals().unwrap().collect::<Vec<[f32; 3]>>();
+        let texcoords = reader
+            .read_tex_coords(0)
+            .unwrap()
+            .into_f32()
+            .collect::<Vec<[f32; 2]>>();
+
+        let indices = reader
+            .read_indices()
+            .unwrap()
+            .clone()
+            .into_u32()
+            .collect::<Vec<GLuint>>();
+
+        let mesh_name = mesh.name().unwrap_or("Unnamed");
+        log::trace!("Mesh {} index count: {}", mesh_name, indices.len());
+        log::trace!("Mesh {} has {:?} positions", mesh_name, positions.len());
+
+        for i in 0..positions.len() {
+            let position = positions[i];
+            let normal = normals[i];
+            let texcoord = texcoords[i];
+
+            gl_vertices.push(position[0]);
+            gl_vertices.push(position[1]);
+            gl_vertices.push(-position[2]); // Flip height
+
+            gl_normals.push(normal[0]);
+            gl_normals.push(normal[1]);
+            gl_normals.push(-normal[2]); // Flip height
+
+            gl_texcoords.push(texcoord[0]);
+            gl_texcoords.push(texcoord[1]);
+        }
+
+        gl_indices = indices;
+        let mesh = Mesh::new(gl_vertices, gl_normals, gl_texcoords, gl_indices);
+        model.meshes.push(mesh);
     }
 }

@@ -94,24 +94,18 @@ impl Mesh {
             );
             gl::EnableVertexAttribArray(2);
 
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-            gl::BindVertexArray(0);
-
             // Indices
-            let mut index_buffer: Vec<GLuint> = Vec::new();
-            for i in 0..indices.len() {
-                index_buffer.push(indices[i]);
-            }
             gl::GenBuffers(1, &mut model.ebo);
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, model.ebo);
             gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
-                (index_buffer.len() * std::mem::size_of::<GLuint>()) as GLsizeiptr,
-                &index_buffer[0] as *const GLuint as *const c_void,
+                (indices.len() * std::mem::size_of::<GLuint>()) as GLsizeiptr,
+                &indices[0] as *const GLuint as *const c_void,
                 gl::STATIC_DRAW,
             );
-
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
+            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+            gl::BindVertexArray(0);
         }
 
         return model;
@@ -119,8 +113,8 @@ impl Mesh {
 
     pub fn render(&self) {
         unsafe {
-            gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BindVertexArray(self.vao);
+            gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
 
             gl::DrawElements(
@@ -130,9 +124,9 @@ impl Mesh {
                 ptr::null(),
             );
 
-            gl::BindVertexArray(0);
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
+            gl::BindVertexArray(0);
         }
     }
 }
