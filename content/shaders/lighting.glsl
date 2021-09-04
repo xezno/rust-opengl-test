@@ -72,7 +72,7 @@ out vec4 FragColor;
 
 float lambert( vec3 normal, vec3 lightDir ) 
 {
-    return max( dot( normalize( normal ), normalize( lightDir ) ), 0.0 );
+    return max( dot( normalize( normal ), lightDir ), 0.0 );
 }
 
 float specular( vec3 normal, vec3 lightDir, vec3 viewDir )
@@ -84,18 +84,17 @@ float specular( vec3 normal, vec3 lightDir, vec3 viewDir )
 
 void main()
 {
-    vec3 vWorldPos = texture( gPosition, fs_in.vTexCoords ).xyz;
-    vec3 vNormal = texture( gNormal, fs_in.vTexCoords ).xyz;
     bool bDraw = texture( gNormal, fs_in.vTexCoords ).w < 0.01;
-    vec3 vColor = texture( gColorSpec, fs_in.vTexCoords ).rgb;
-    float fSpecular = texture( gColorSpec, fs_in.vTexCoords ).a;
-    
     if ( bDraw )
         discard;
     
+    vec3 vWorldPos = texture( gPosition, fs_in.vTexCoords ).xyz;
+    vec3 vNormal = texture( gNormal, fs_in.vTexCoords ).xyz;
+    vec3 vColor = texture( gColorSpec, fs_in.vTexCoords ).rgb;
+    float fSpecular = texture( gColorSpec, fs_in.vTexCoords ).a;
+    
     vec3 vViewDir = normalize(uCamPos - vWorldPos);
 
-    
     // Calculate the lighting for each point light in the scene
     for ( int i = 0; i < MAX_LIGHTS; i++ )
     {
@@ -112,16 +111,7 @@ void main()
         vColor += lighting * attenuation;
     }
 
-    float z = length( uCamPos - vWorldPos );
-    z = z / ( z + 1.0 );
-    
-    float fFog = pow( z, 16 );
-    fFog = clamp( fFog, 0.0, 1.0 );
-
-    // vColor = mix( vColor, lightingInfo.vFogColor, fFog );
     vColor = pow( vColor, vec3( 2.2 ) );
-
-    // vColor = vec3( z );
     FragColor = vec4( vColor, 1.0 );
 }
 

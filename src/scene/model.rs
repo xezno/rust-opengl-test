@@ -102,11 +102,11 @@ fn process_gltf_mesh(
     gltf: &gltf::Document,
     buffers: &[gltf::buffer::Data],
 ) -> () {
+    let mut gl_vertices: Vec<GLfloat> = Vec::new();
+    let mut gl_normals: Vec<GLfloat> = Vec::new();
+    let mut gl_texcoords: Vec<GLfloat> = Vec::new();
+    let mut gl_indices: Vec<GLuint> = Vec::new();
     for primitive in mesh.primitives() {
-        let mut gl_vertices: Vec<GLfloat> = Vec::new();
-        let mut gl_normals: Vec<GLfloat> = Vec::new();
-        let mut gl_texcoords: Vec<GLfloat> = Vec::new();
-        let mut gl_indices: Vec<GLuint> = Vec::new();
         let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
 
         let positions = reader.read_positions().unwrap().collect::<Vec<[f32; 3]>>();
@@ -128,25 +128,29 @@ fn process_gltf_mesh(
         log::trace!("Mesh {} index count: {}", mesh_name, indices.len());
         log::trace!("Mesh {} has {:?} positions", mesh_name, positions.len());
 
+        let start_index: u32 = (gl_vertices.len() / 3) as u32;
+
         for i in 0..positions.len() {
             let position = positions[i];
             let normal = normals[i];
             let texcoord = texcoords[i];
 
-            gl_vertices.push(position[0]);
-            gl_vertices.push(position[1]);
             gl_vertices.push(-position[2]); // Flip height
+            gl_vertices.push(position[1]);
+            gl_vertices.push(position[0]);
 
-            gl_normals.push(normal[0]);
-            gl_normals.push(normal[1]);
             gl_normals.push(-normal[2]); // Flip height
+            gl_normals.push(normal[1]);
+            gl_normals.push(normal[0]);
 
             gl_texcoords.push(texcoord[0]);
             gl_texcoords.push(texcoord[1]);
         }
 
-        gl_indices = indices;
-        let mesh = Mesh::new(gl_vertices, gl_normals, gl_texcoords, gl_indices);
-        model.meshes.push(mesh);
+        for i in 0..indices.len() {
+            gl_indices.push(indices[i] + start_index);
+        }
     }
+    let mesh = Mesh::new(gl_vertices, gl_normals, gl_texcoords, gl_indices);
+    model.meshes.push(mesh);
 }

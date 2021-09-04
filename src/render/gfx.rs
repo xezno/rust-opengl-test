@@ -44,6 +44,7 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
 
         gl::ClipControl(gl::LOWER_LEFT, gl::ZERO_TO_ONE);
         gl::Enable(gl::MULTISAMPLE);
+        gl::Enable(gl::CULL_FACE);
     }
 }
 
