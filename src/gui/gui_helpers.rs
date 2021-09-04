@@ -6,7 +6,6 @@
 //
 // ============================================================================
 
-use gl::types::GLuint;
 use glam::{Quat, Vec3};
 use imgui::sys::*;
 use imgui::*;
@@ -120,12 +119,7 @@ pub fn gui_perf_overlay(ui: &Ui, frames_last_second: i32) {
         });
 }
 
-pub fn gui_g_buffers(
-    ui: &imgui::Ui,
-    g_position: &GLuint,
-    g_normal: &GLuint,
-    g_color_spec: &GLuint,
-) -> () {
+pub fn gui_g_buffers(ui: &imgui::Ui, g_position: &u32, g_normal: &u32, g_color_spec: &u32) -> () {
     imgui::Window::new(imgui::im_str!("G-Buffers")).build(&ui, || {
         let mut size: ImVec2 = ImVec2::new(0.0, 0.0);
         unsafe {

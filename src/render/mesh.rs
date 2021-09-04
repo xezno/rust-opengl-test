@@ -11,12 +11,16 @@ use gl::types::*;
 use std::ffi::c_void;
 use std::ptr;
 
+use super::texture::Texture;
+
 pub struct Mesh {
     pub vbo: GLuint,
     pub vao: GLuint,
     pub ebo: GLuint,
     pub vertex_count: GLint,
     pub index_count: GLint,
+
+    pub diffuse_texture: Texture,
 }
 
 impl Mesh {
@@ -25,6 +29,7 @@ impl Mesh {
         normals: Vec<GLfloat>,
         texcoords: Vec<GLfloat>,
         indices: Vec<GLuint>,
+        diffuse_texture: Texture,
     ) -> Mesh {
         let mut model: Mesh = Mesh {
             vbo: 0,
@@ -32,6 +37,7 @@ impl Mesh {
             ebo: 0,
             vertex_count: (vertices.len() / 3) as GLint,
             index_count: (indices.len()) as GLint,
+            diffuse_texture,
         };
 
         unsafe {

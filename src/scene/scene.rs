@@ -78,8 +78,6 @@ impl Scene {
                     info!("Scene: loading model");
                     let mut model = Model::new(object.path.as_ref().unwrap().as_str());
                     model.transform = object.transform;
-                    model.material = object.material.clone().unwrap();
-                    model.diffuse_texture = Texture::new(model.material.diffuse.as_str());
                     loaded_scene.models.push(model);
 
                     if object.phys.is_some() {
@@ -124,11 +122,11 @@ impl LoadedScene {
     pub fn new() -> Self {
         // TEST: Add a bunch of point lights (HACK/TODO)
         let mut point_lights = Vec::new();
-        for _ in 0..16 {
+        for _ in 0..32 {
             let rand_pos = Vec3::new(
-                rand::thread_rng().gen_range(-15.0..=15.0),
-                rand::thread_rng().gen_range(-15.0..=15.0),
-                rand::thread_rng().gen_range(-2.0..=2.0),
+                rand::thread_rng().gen_range(-10.0..=10.0),
+                rand::thread_rng().gen_range(-50.0..=50.0),
+                rand::thread_rng().gen_range(0.0..=50.0),
             );
 
             // Random weighted color
@@ -141,7 +139,7 @@ impl LoadedScene {
 
             let light = PointLight {
                 transform: Transform::new(rand_pos, Quat::IDENTITY, Vec3::ONE),
-                color: Vec3::new(rand_col.0, rand_col.1, rand_col.2) * 2.0,
+                color: Vec3::new(rand_col.0, rand_col.1, rand_col.2) * 1.5,
                 orig_pos: rand_pos,
             };
             point_lights.push(light);

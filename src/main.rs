@@ -185,16 +185,7 @@ fn main() {
         {
             // Geo pass
             {
-                unsafe {
-                    gl::Enable(gl::DEPTH_TEST);
-                    let attachments = [
-                        gl::COLOR_ATTACHMENT0,
-                        gl::COLOR_ATTACHMENT1,
-                        gl::COLOR_ATTACHMENT2,
-                    ];
-                    gl::ClearColor(0.0, 0.0, 0.0, 0.0);
-                    gl::DrawBuffers(3, &attachments[0]);
-                }
+                gfx_prepare_geometry_pass();
                 gfx_bind_framebuffer(g_buffer);
                 gfx_clear();
                 loaded_scene.render(&mut gbuffer_shader, &mut camera);
@@ -231,19 +222,14 @@ fn main() {
                 sky_color.1 *= scale;
                 sky_color.2 *= scale;
 
-                unsafe {
-                    gl::Disable(gl::DEPTH_TEST);
-                    gl::ClearColor(sky_color.0, sky_color.1, sky_color.2, 1.0);
-                }
+                gfx_prepare_lighting_pass(&sky_color);
                 gfx_bind_framebuffer(0);
                 gfx_clear();
 
+                // Bind lighting pass shader
+                lighting_shader.bind();
+
                 unsafe {
-                    gl::Enable(gl::FRAMEBUFFER_SRGB);
-
-                    // Bind lighting pass shader
-                    lighting_shader.bind();
-
                     // Bind gbuffer textures
                     gl::ActiveTexture(gl::TEXTURE0);
                     gl::BindTexture(gl::TEXTURE_2D, g_position);
@@ -251,52 +237,51 @@ fn main() {
                     gl::BindTexture(gl::TEXTURE_2D, g_normal);
                     gl::ActiveTexture(gl::TEXTURE2);
                     gl::BindTexture(gl::TEXTURE_2D, g_color_spec);
-
-                    lighting_shader.set_i32("gPosition", 0);
-                    lighting_shader.set_i32("gNormal", 1);
-                    lighting_shader.set_i32("gColorSpec", 2);
-
-                    // Submit scene uniforms
-                    lighting_shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
-                    lighting_shader.set_vec3("uCamPos", &camera.position);
-
-                    // Set lighting uniforms
-                    lighting_shader.set_vec3(
-                        "lightingInfo.vLightDir",
-                        &loaded_scene.light.direction.to_euler(EulerRot::XYZ).into(),
-                    );
-                    lighting_shader.set_vec3("lightingInfo.vLightColor", &loaded_scene.light.color);
-                    lighting_shader.set_vec3(
-                        "lightingInfo.vFogColor",
-                        &Vec3::new(sky_color.0, sky_color.1, sky_color.2),
-                    );
-
-                    // Submit scene point lighting
-                    lighting_shader.set_i32(
-                        "lightingInfo.iPointLightCount",
-                        loaded_scene.point_lights.len() as i32,
-                    );
-
-                    for (i, point_light) in loaded_scene.point_lights.iter().enumerate() {
-                        lighting_shader.set_vec3(
-                            format!("pointLights[{}].vPos", i).as_str(),
-                            &point_light.transform.position,
-                        );
-                        lighting_shader.set_vec3(
-                            format!("pointLights[{}].vColor", i).as_str(),
-                            &point_light.color,
-                        );
-                    }
-
-                    // Render quad
-                    gfx_quad_render(quad_vao);
-
-                    gl::Disable(gl::FRAMEBUFFER_SRGB);
                 }
+
+                lighting_shader.set_i32("gPosition", 0);
+                lighting_shader.set_i32("gNormal", 1);
+                lighting_shader.set_i32("gColorSpec", 2);
+
+                // Submit scene uniforms
+                lighting_shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
+                lighting_shader.set_vec3("uCamPos", &camera.position);
+
+                // Set lighting uniforms
+                lighting_shader.set_vec3(
+                    "lightingInfo.vLightDir",
+                    &loaded_scene.light.direction.to_euler(EulerRot::XYZ).into(),
+                );
+                lighting_shader.set_vec3("lightingInfo.vLightColor", &loaded_scene.light.color);
+                lighting_shader.set_vec3(
+                    "lightingInfo.vFogColor",
+                    &Vec3::new(sky_color.0, sky_color.1, sky_color.2),
+                );
+
+                // Submit scene point lighting
+                lighting_shader.set_i32(
+                    "lightingInfo.iPointLightCount",
+                    loaded_scene.point_lights.len() as i32,
+                );
+
+                for (i, point_light) in loaded_scene.point_lights.iter().enumerate() {
+                    lighting_shader.set_vec3(
+                        format!("pointLights[{}].vPos", i).as_str(),
+                        &point_light.transform.position,
+                    );
+                    lighting_shader.set_vec3(
+                        format!("pointLights[{}].vColor", i).as_str(),
+                        &point_light.color,
+                    );
+                }
+
+                // Render quad
+                gfx_quad_render(quad_vao);
             }
 
             // Draw imgui
             {
+                gfx_prepare_imgui_pass();
                 imgui_sdl2.prepare_render(&ui, &window);
 
                 // Dock space

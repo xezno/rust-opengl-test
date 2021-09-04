@@ -108,7 +108,7 @@ void main()
         gColorSpec.rgb = diffuseCol.rgb;
     }
 
-    gColorSpec.a = materialInfo.fSpecular;
+    gColorSpec.a = 1.0;
 }
 
 #endif

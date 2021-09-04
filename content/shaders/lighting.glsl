@@ -91,7 +91,7 @@ void main()
     vec3 vWorldPos = texture( gPosition, fs_in.vTexCoords ).xyz;
     vec3 vNormal = texture( gNormal, fs_in.vTexCoords ).xyz;
     vec3 vColor = texture( gColorSpec, fs_in.vTexCoords ).rgb;
-    float fSpecular = texture( gColorSpec, fs_in.vTexCoords ).a;
+    float fSpecular = 0.0; //texture( gColorSpec, fs_in.vTexCoords ).a;
     
     vec3 vViewDir = normalize(uCamPos - vWorldPos);
 

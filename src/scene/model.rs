@@ -8,8 +8,6 @@
 
 use glam::*;
 
-use gl::types::*;
-
 use super::{camera::Camera, scene::LoadedScene, transform::Transform};
 use crate::render::{material::Material, mesh::Mesh, shader::Shader, texture::Texture};
 
@@ -24,9 +22,6 @@ pub struct Vertex {
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub transform: Transform,
-    pub material: Material,
-
-    pub diffuse_texture: Texture,
 }
 
 impl Model {
@@ -34,9 +29,6 @@ impl Model {
         let mut model = Model {
             meshes: Vec::new(),
             transform: Transform::default(),
-            material: Material::default(),
-
-            diffuse_texture: Texture::default(),
         };
 
         log::info!("Loading gltf from '{}'", gltf_path);
@@ -44,7 +36,13 @@ impl Model {
         let (gltf, buffers, _) = gltf::import(&std::path::Path::new(gltf_path)).unwrap();
 
         let scene = gltf.default_scene().unwrap();
-        process_gltf_node(scene.nodes().next().unwrap(), &mut model, &gltf, &buffers);
+        process_gltf_node(
+            gltf_path,
+            scene.nodes().next().unwrap(),
+            &mut model,
+            &gltf,
+            &buffers,
+        );
 
         return model;
     }
@@ -71,42 +69,44 @@ impl Model {
                 shader.set_vec3("lightingInfo.vLightColor", &scene.light.color);
 
                 // Submit material uniforms
-                shader.set_f32("materialInfo.fSpecular", self.material.specular);
-
+                shader.set_f32("materialInfo.fSpecular", 0.0);
                 shader.set_i32("tDiffuseTex", 0);
             }
-            self.diffuse_texture.bind();
+            mesh.diffuse_texture.bind();
             mesh.render();
         }
     }
 }
 
 fn process_gltf_node(
+    gltf_path: &str,
     node: gltf::Node,
     model: &mut Model,
     gltf: &gltf::Document,
     buffers: &[gltf::buffer::Data],
 ) -> () {
     if node.mesh().is_some() {
-        process_gltf_mesh(&node.mesh().unwrap(), model, gltf, buffers);
+        process_gltf_mesh(gltf_path, &node.mesh().unwrap(), model, gltf, buffers);
     }
 
     for child in node.children() {
-        process_gltf_node(child, model, gltf, buffers);
+        process_gltf_node(gltf_path, child, model, gltf, buffers);
     }
 }
 
 fn process_gltf_mesh(
+    gltf_path: &str,
     mesh: &gltf::Mesh,
     model: &mut Model,
     _gltf: &gltf::Document,
     buffers: &[gltf::buffer::Data],
 ) -> () {
-    let mut gl_vertices: Vec<GLfloat> = Vec::new();
-    let mut gl_normals: Vec<GLfloat> = Vec::new();
-    let mut gl_texcoords: Vec<GLfloat> = Vec::new();
-    let mut gl_indices: Vec<GLuint> = Vec::new();
     for primitive in mesh.primitives() {
+        let mut gl_vertices: Vec<f32> = Vec::new();
+        let mut gl_normals: Vec<f32> = Vec::new();
+        let mut gl_texcoords: Vec<f32> = Vec::new();
+        let mut gl_indices: Vec<u32> = Vec::new();
+
         let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
 
         let positions = reader.read_positions().unwrap().collect::<Vec<[f32; 3]>>();
@@ -122,13 +122,13 @@ fn process_gltf_mesh(
             .unwrap()
             .clone()
             .into_u32()
-            .collect::<Vec<GLuint>>();
+            .collect::<Vec<u32>>();
 
         let mesh_name = mesh.name().unwrap_or("Unnamed");
         log::trace!("Mesh {} index count: {}", mesh_name, indices.len());
         log::trace!("Mesh {} has {:?} positions", mesh_name, positions.len());
 
-        let start_index: u32 = (gl_vertices.len() / 3) as u32;
+        // let start_index: u32 = (gl_vertices.len() / 3) as u32;
 
         for i in 0..positions.len() {
             let position = positions[i];
@@ -148,9 +148,41 @@ fn process_gltf_mesh(
         }
 
         for i in 0..indices.len() {
-            gl_indices.push(indices[i] + start_index);
+            gl_indices.push(indices[i]); // + start_index);
         }
+
+        let diffuse = primitive
+            .material()
+            .pbr_metallic_roughness()
+            .base_color_texture();
+
+        let diffuse_texture: Texture;
+
+        if diffuse.is_some() {
+            // Get image data from buffer view
+            let image_source = diffuse.unwrap().texture().source().source();
+            match image_source {
+                gltf::image::Source::Uri { uri, .. } => {
+                    let gltf_dir = std::path::Path::new(gltf_path);
+                    let texture_path = gltf_dir.with_file_name(uri);
+
+                    diffuse_texture = Texture::new(texture_path.to_str().unwrap());
+                }
+                gltf::image::Source::View { .. } => {
+                    todo!();
+                }
+            }
+        } else {
+            diffuse_texture = Texture::new("content/textures/missing.png");
+        }
+
+        let mesh = Mesh::new(
+            gl_vertices,
+            gl_normals,
+            gl_texcoords,
+            gl_indices,
+            diffuse_texture,
+        );
+        model.meshes.push(mesh);
     }
-    let mesh = Mesh::new(gl_vertices, gl_normals, gl_texcoords, gl_indices);
-    model.meshes.push(mesh);
 }

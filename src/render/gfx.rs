@@ -188,8 +188,37 @@ pub fn gfx_quad_setup() -> GLuint {
     return vao;
 }
 
-pub unsafe fn gfx_quad_render(vao: GLuint) {
-    gl::BindVertexArray(vao);
-    gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 4);
-    gl::BindVertexArray(0);
+pub fn gfx_quad_render(vao: GLuint) {
+    unsafe {
+        gl::BindVertexArray(vao);
+        gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 4);
+        gl::BindVertexArray(0);
+    }
+}
+
+pub fn gfx_prepare_geometry_pass() {
+    unsafe {
+        gl::Enable(gl::DEPTH_TEST);
+        let attachments = [
+            gl::COLOR_ATTACHMENT0,
+            gl::COLOR_ATTACHMENT1,
+            gl::COLOR_ATTACHMENT2,
+        ];
+        gl::ClearColor(0.0, 0.0, 0.0, 0.0);
+        gl::DrawBuffers(3, &attachments[0]);
+    }
+}
+
+pub fn gfx_prepare_lighting_pass(sky_color: &(f32, f32, f32)) {
+    unsafe {
+        gl::Disable(gl::DEPTH_TEST);
+        gl::ClearColor(sky_color.0, sky_color.1, sky_color.2, 1.0);
+        gl::Enable(gl::FRAMEBUFFER_SRGB);
+    }
+}
+
+pub fn gfx_prepare_imgui_pass() {
+    unsafe {
+        gl::Disable(gl::FRAMEBUFFER_SRGB);
+    }
 }
