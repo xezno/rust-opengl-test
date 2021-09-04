@@ -128,27 +128,28 @@ fn process_gltf_mesh(
         log::trace!("Mesh {} index count: {}", mesh_name, indices.len());
         log::trace!("Mesh {} has {:?} positions", mesh_name, positions.len());
 
-        // let start_index: u32 = (gl_vertices.len() / 3) as u32;
-
         for i in 0..positions.len() {
             let position = positions[i];
             let normal = normals[i];
             let texcoord = texcoords[i];
 
+            // Triangle order swap - gltf uses a different winding order?
             gl_vertices.push(-position[2]); // Flip height
             gl_vertices.push(position[1]);
             gl_vertices.push(position[0]);
 
+            // We're Z-up, so switch Y with Z
+            gl_normals.push(normal[0]);
             gl_normals.push(-normal[2]); // Flip height
             gl_normals.push(normal[1]);
-            gl_normals.push(normal[0]);
 
+            // Texcoords remain the same
             gl_texcoords.push(texcoord[0]);
             gl_texcoords.push(texcoord[1]);
         }
 
         for i in 0..indices.len() {
-            gl_indices.push(indices[i]); // + start_index);
+            gl_indices.push(indices[i]);
         }
 
         let diffuse = primitive

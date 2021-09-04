@@ -3,17 +3,28 @@
   "name": "scene_1",
 
   "objects": [{
-    "type": "model",
-    "name": "Sponza Scene",
-    "path": "content/models/sponza/glTF/sponza.gltf",
-    "transform": {
-      "position": [0.0, 0.0, 0.0],
-      "rotation": [0.7071068, 0, 0, 0.7071068],
-      "scale": [0.05, 0.05, 0.05]
+      "type": "model",
+      "name": "Sponza Scene",
+      "path": "content/models/sponza/glTF/sponza.gltf",
+      "transform": {
+        "position": [0.0, 0.0, 0.0],
+        "rotation": [0.7071068, 0, 0, 0.7071068],
+        "scale": [0.05, 0.05, 0.05]
+      },
+      "material": {
+        "diffuse": "content/textures/test.png",
+        "specular": 0.5
+      }
     },
-    "material": {
-      "diffuse": "content/textures/test.png",
-      "specular": 0.5
+    {
+      "type": "light_sun",
+      "name": "Directional Light",
+      "color": [1.0, 1.0, 1.0],
+      "transform": {
+        "position": [0.0, 0.0, 0.0],
+        "rotation": [ 0, 0.3441434, -0.6882868, 0.638613 ],
+        "scale": [1.0, 1.0, 1.0]
+      }
     }
-  }]
+  ]
 }
