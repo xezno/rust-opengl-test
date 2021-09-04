@@ -6,7 +6,7 @@
     {
       "type": "model",
       "name": "monkey 1",
-      "path": "content/models/monkey.obj",
+      "path": "content/models/monkey.gltf",
       "transform": {
         "position": [2.0, 0.0, 0.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
@@ -20,7 +20,7 @@
     {
       "type": "model",
       "name": "monkey 2",
-      "path": "content/models/monkey.obj",
+      "path": "content/models/monkey.gltf",
       "transform": {
         "position": [-2.0, 0.0, 0.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
@@ -35,7 +35,7 @@
     {
       "type": "model",
       "name": "monkey 3",
-      "path": "content/models/monkey.obj",
+      "path": "content/models/monkey.gltf",
       "transform": {
         "position": [0.0, 0.0, 1.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
@@ -50,7 +50,7 @@
     {
       "type": "model",
       "name": "monkey 4",
-      "path": "content/models/monkey.obj",
+      "path": "content/models/monkey.gltf",
       "transform": {
         "position": [0.0, 0.0, -1.0],
         "rotation": [0.0, 0.0, 0.0, 1.0],
@@ -65,7 +65,7 @@
     {
       "type": "model",
       "name": "floor",
-      "path": "content/models/cube.obj",
+      "path": "content/models/cube.gltf",
       "transform": {
         "position": [0.0, 0.0, -4.0],
         "rotation": [ 0, 0, 0, 1 ],
@@ -80,7 +80,7 @@
     {
       "type": "model",
       "name": "Left Ball",
-      "path": "content/models/sphere.obj",
+      "path": "content/models/sphere.gltf",
       "transform": {
         "position": [-1.0, 0.0, 10.0],
         "rotation": [ 0, 0, 0, 1 ],
@@ -96,7 +96,7 @@
     {
       "type": "model",
       "name": "Right Ball",
-      "path": "content/models/sphere.obj",
+      "path": "content/models/sphere.gltf",
       "transform": {
         "position": [1.0, 0.0, 10.0],
         "rotation": [ 0, 0, 0, 1 ],

@@ -115,7 +115,7 @@ fn main() {
     //
     // Debug shape
     //
-    let debug_model = crate::scene::model::Model::new("content/models/sphere.obj");
+    let debug_model = crate::scene::model::Model::new("content/models/sphere.gltf");
     let mut debug_shader = Shader::new("content/shaders/gbuffer_light_debug.glsl");
     debug_shader.scan_uniforms();
 

@@ -14,15 +14,24 @@ use std::ptr;
 pub struct Mesh {
     pub vbo: GLuint,
     pub vao: GLuint,
+    pub ebo: GLuint,
     pub vertex_count: GLint,
+    pub index_count: GLint,
 }
 
 impl Mesh {
-    pub fn new(vertices: Vec<GLfloat>, normals: Vec<GLfloat>, texcoords: Vec<GLfloat>) -> Mesh {
+    pub fn new(
+        vertices: Vec<GLfloat>,
+        normals: Vec<GLfloat>,
+        texcoords: Vec<GLfloat>,
+        indices: Vec<GLuint>,
+    ) -> Mesh {
         let mut model: Mesh = Mesh {
             vbo: 0,
             vao: 0,
+            ebo: 0,
             vertex_count: (vertices.len() / 3) as GLint,
+            index_count: (indices.len()) as GLint,
         };
 
         unsafe {
@@ -87,6 +96,22 @@ impl Mesh {
 
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
             gl::BindVertexArray(0);
+
+            // Indices
+            let mut index_buffer: Vec<GLuint> = Vec::new();
+            for i in 0..indices.len() {
+                index_buffer.push(indices[i]);
+            }
+            gl::GenBuffers(1, &mut model.ebo);
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, model.ebo);
+            gl::BufferData(
+                gl::ELEMENT_ARRAY_BUFFER,
+                (index_buffer.len() * std::mem::size_of::<GLuint>()) as GLsizeiptr,
+                &index_buffer[0] as *const GLuint as *const c_void,
+                gl::STATIC_DRAW,
+            );
+
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
         }
 
         return model;
@@ -96,11 +121,18 @@ impl Mesh {
         unsafe {
             gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BindVertexArray(self.vao);
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
 
-            gl::DrawArrays(gl::TRIANGLES, 0, self.vertex_count);
+            gl::DrawElements(
+                gl::TRIANGLES,
+                self.index_count,
+                gl::UNSIGNED_INT,
+                ptr::null(),
+            );
 
             gl::BindVertexArray(0);
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
         }
     }
 }
