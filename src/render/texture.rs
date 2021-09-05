@@ -6,7 +6,7 @@
 //
 // ============================================================================
 
-use std::{ffi::c_void, fs::File};
+use std::ffi::c_void;
 
 use gl::types::*;
 use image::{EncodableLayout, GenericImageView};

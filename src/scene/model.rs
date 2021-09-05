@@ -10,7 +10,7 @@ use glam::*;
 use gltf::material::NormalTexture;
 
 use super::{camera::Camera, scene::LoadedScene, transform::Transform};
-use crate::render::{material::Material, mesh::Mesh, shader::Shader, texture::Texture};
+use crate::render::{mesh::Mesh, shader::Shader, texture::Texture};
 
 pub struct Model {
     pub meshes: Vec<Mesh>,
@@ -64,19 +64,17 @@ impl Model {
                 // Submit material uniforms
                 shader.set_f32("materialInfo.fSpecular", 0.0);
 
-                unsafe {
-                    shader.set_i32("materialInfo.tDiffuseTex", 0);
-                    mesh.diffuse_texture.bind(Some(gl::TEXTURE0));
+                shader.set_i32("materialInfo.tDiffuseTex", 0);
+                mesh.diffuse_texture.bind(Some(gl::TEXTURE0));
 
-                    shader.set_i32("materialInfo.tNormalTex", 1);
-                    mesh.normal_texture.bind(Some(gl::TEXTURE1));
+                shader.set_i32("materialInfo.tNormalTex", 1);
+                mesh.normal_texture.bind(Some(gl::TEXTURE1));
 
-                    shader.set_i32("materialInfo.tOrmTex", 2);
-                    mesh.orm_texture.bind(Some(gl::TEXTURE2));
+                shader.set_i32("materialInfo.tOrmTex", 2);
+                mesh.orm_texture.bind(Some(gl::TEXTURE2));
 
-                    shader.set_i32("materialInfo.tEmissiveTex", 3);
-                    mesh.emissive_texture.bind(Some(gl::TEXTURE3));
-                }
+                shader.set_i32("materialInfo.tEmissiveTex", 3);
+                mesh.emissive_texture.bind(Some(gl::TEXTURE3));
             }
 
             mesh.render();
@@ -139,10 +137,6 @@ fn process_gltf_mesh(
         } else {
             println!("We don't have tangents here");
         }
-
-        let mesh_name = mesh.name().unwrap_or("Unnamed");
-        // log::trace!("Mesh {} index count: {}", mesh_name, indices.len());
-        // log::trace!("Mesh {} has {:?} positions", mesh_name, positions.len());
 
         for i in 0..positions.len() {
             let position = positions[i];
