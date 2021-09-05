@@ -18,7 +18,7 @@ pub struct Texture {
 
 impl Texture {
     pub fn new(texture_path: &str) -> Texture {
-        log::info!("Loading texture: {}", texture_path);
+        // log::info!("Loading texture: {}", texture_path);
 
         let image = image::open(texture_path).unwrap();
         let image_clone = image.clone();
@@ -31,7 +31,7 @@ impl Texture {
         let mut id: GLuint = 0;
         unsafe {
             gl::GenTextures(1, &mut id);
-            log::trace!("Creating GL texture {}", id);
+            // log::trace!("Creating GL texture {}", id);
             gl::BindTexture(gl::TEXTURE_2D, id);
             gl::TexImage2D(
                 gl::TEXTURE_2D,
@@ -53,15 +53,16 @@ impl Texture {
 
             gl::BindTexture(gl::TEXTURE_2D, 0);
 
-            log::trace!("Texture loaded: {}", id);
+            // log::trace!("Texture loaded: {}", id);
         }
 
         return Texture { id };
     }
 
-    pub fn bind(&self) {
+    pub fn bind(&self, _active_texture: Option<GLuint>) {
         unsafe {
-            gl::ActiveTexture(gl::TEXTURE0);
+            let active_texture = _active_texture.unwrap_or(gl::TEXTURE0);
+            gl::ActiveTexture(active_texture);
             gl::BindTexture(gl::TEXTURE_2D, self.id);
         }
     }

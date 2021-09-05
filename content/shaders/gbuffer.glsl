@@ -7,6 +7,8 @@ struct FS_IN {
   vec3 vNormal;
   vec4 vScreenPos;
   vec2 vTexCoords;
+
+  mat3 mTBN;
 };
 
 // 
@@ -21,6 +23,9 @@ struct STRUCT_LIGHTING {
 struct STRUCT_MATERIAL {
   float fSpecular;
   sampler2D tDiffuseTex;
+  sampler2D tNormalTex;
+  sampler2D tOrmTex;
+  sampler2D tEmissiveTex;
 };
 
 uniform STRUCT_MATERIAL materialInfo;
@@ -35,6 +40,7 @@ uniform STRUCT_LIGHTING lightingInfo;
 layout(location = 0) in vec3 inPos;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoords;
+layout(location = 3) in vec3 inTangent;
 
 uniform mat4 uModelMat;
 uniform mat4 uProjViewMat;
@@ -44,9 +50,16 @@ out FS_IN fs_in;
 void main() 
 {
   fs_in.vWorldPos = vec3( uModelMat * vec4( inPos, 1.0 ) );
-  fs_in.vNormal = inNormal;
   fs_in.vScreenPos = uProjViewMat * uModelMat * vec4( inPos, 1.0 );
   fs_in.vTexCoords = inTexCoords;
+
+  // Calculate the TBN matrix
+  vec3 vTangent = normalize( vec3( uModelMat * vec4( inTangent, 0.0 )));
+  vec3 vNormal = normalize( vec3( uModelMat * vec4( inNormal, 0.0 )));
+  vec3 vBitangent = cross( inNormal, vTangent );
+  fs_in.mTBN = mat3( vTangent, vBitangent, inNormal );
+
+  fs_in.vNormal = inNormal;
   
   gl_Position = fs_in.vScreenPos;
 }
@@ -88,7 +101,12 @@ void main()
     // - gColorSpec: Albedo (w/ scene directional lighting calculated) + specular. RGB = albedo, alpha = specular power (scaled by 512.0).
     //
     gPosition = vec4( fs_in.vWorldPos, 1.0 );
-    gNormal = vec4( fs_in.vNormal, 1.0 );
+  
+    // Multiply normal by TBN matrix
+    vec3 tbn_normal = texture( materialInfo.tNormalTex, fs_in.vTexCoords ).rgb;
+    tbn_normal = tbn_normal * 2.0 - 1.0;
+    tbn_normal = normalize( fs_in.mTBN * tbn_normal );
+    gNormal = vec4( tbn_normal, 1.0 );
 
     // Weird step: calculate sun lighting here rather than in our lighting pass
     {

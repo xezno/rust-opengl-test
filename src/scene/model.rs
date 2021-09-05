@@ -7,17 +7,10 @@
 // ============================================================================
 
 use glam::*;
+use gltf::material::NormalTexture;
 
 use super::{camera::Camera, scene::LoadedScene, transform::Transform};
 use crate::render::{material::Material, mesh::Mesh, shader::Shader, texture::Texture};
-
-pub struct Vertex {
-    pub position: Vec3,
-    pub normal: Vec3,
-    pub texcoord: Vec2,
-    // pub tangent: Vec3,
-    // pub bitangent: Vec3,
-}
 
 pub struct Model {
     pub meshes: Vec<Mesh>,
@@ -70,9 +63,22 @@ impl Model {
 
                 // Submit material uniforms
                 shader.set_f32("materialInfo.fSpecular", 0.0);
-                shader.set_i32("tDiffuseTex", 0);
+
+                unsafe {
+                    shader.set_i32("materialInfo.tDiffuseTex", 0);
+                    mesh.diffuse_texture.bind(Some(gl::TEXTURE0));
+
+                    shader.set_i32("materialInfo.tNormalTex", 1);
+                    mesh.normal_texture.bind(Some(gl::TEXTURE1));
+
+                    shader.set_i32("materialInfo.tOrmTex", 2);
+                    mesh.orm_texture.bind(Some(gl::TEXTURE2));
+
+                    shader.set_i32("materialInfo.tEmissiveTex", 3);
+                    mesh.emissive_texture.bind(Some(gl::TEXTURE3));
+                }
             }
-            mesh.diffuse_texture.bind();
+
             mesh.render();
         }
     }
@@ -106,6 +112,7 @@ fn process_gltf_mesh(
         let mut gl_normals: Vec<f32> = Vec::new();
         let mut gl_texcoords: Vec<f32> = Vec::new();
         let mut gl_indices: Vec<u32> = Vec::new();
+        let mut gl_tangents: Vec<f32> = Vec::new();
 
         let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
 
@@ -124,14 +131,24 @@ fn process_gltf_mesh(
             .into_u32()
             .collect::<Vec<u32>>();
 
+        let mut tangents = vec![[1.0; 4]; positions.len()];
+
+        if reader.read_tangents().is_some() {
+            println!("We have tangents here");
+            tangents = reader.read_tangents().unwrap().collect::<Vec<[f32; 4]>>();
+        } else {
+            println!("We don't have tangents here");
+        }
+
         let mesh_name = mesh.name().unwrap_or("Unnamed");
-        log::trace!("Mesh {} index count: {}", mesh_name, indices.len());
-        log::trace!("Mesh {} has {:?} positions", mesh_name, positions.len());
+        // log::trace!("Mesh {} index count: {}", mesh_name, indices.len());
+        // log::trace!("Mesh {} has {:?} positions", mesh_name, positions.len());
 
         for i in 0..positions.len() {
             let position = positions[i];
             let normal = normals[i];
             let texcoord = texcoords[i];
+            let tangent = tangents[i];
 
             // Triangle order swap - gltf uses a different winding order?
             gl_vertices.push(-position[2]); // Flip height
@@ -146,44 +163,88 @@ fn process_gltf_mesh(
             // Texcoords remain the same
             gl_texcoords.push(texcoord[0]);
             gl_texcoords.push(texcoord[1]);
+
+            // Flip Y and Z for tangents
+            gl_tangents.push(tangent[0]);
+            gl_tangents.push(-tangent[2]); // Flip height
+            gl_tangents.push(tangent[1]);
         }
 
         for i in 0..indices.len() {
             gl_indices.push(indices[i]);
         }
 
-        let diffuse = primitive
-            .material()
-            .pbr_metallic_roughness()
-            .base_color_texture();
+        let pbr_material = primitive.material().pbr_metallic_roughness();
 
-        let diffuse_texture: Texture;
+        let diffuse = pbr_material.base_color_texture();
+        let orm = pbr_material.metallic_roughness_texture();
+        let normal = primitive.material().normal_texture();
+        let emissive = primitive.material().emissive_texture();
 
-        if diffuse.is_some() {
-            // Get image data from buffer view
-            let image_source = diffuse.unwrap().texture().source().source();
-            match image_source {
-                gltf::image::Source::Uri { uri, .. } => {
-                    let gltf_dir = std::path::Path::new(gltf_path);
-                    let texture_path = gltf_dir.with_file_name(uri);
-
-                    diffuse_texture = Texture::new(texture_path.to_str().unwrap());
-                }
-                gltf::image::Source::View { .. } => {
-                    todo!();
-                }
-            }
-        } else {
-            diffuse_texture = Texture::new("content/textures/missing.png");
-        }
+        let diffuse_texture: Texture = process_gltf_texture(gltf_path, diffuse);
+        let orm_texture: Texture = process_gltf_texture(gltf_path, orm);
+        let normal_texture: Texture = process_gltf_normal_map(gltf_path, normal);
+        let emissive_texture: Texture = process_gltf_texture(gltf_path, emissive);
 
         let mesh = Mesh::new(
             gl_vertices,
             gl_normals,
             gl_texcoords,
             gl_indices,
+            gl_tangents,
             diffuse_texture,
+            orm_texture,
+            normal_texture,
+            emissive_texture,
         );
         model.meshes.push(mesh);
     }
+}
+
+fn process_gltf_texture(gltf_path: &str, info: Option<gltf::texture::Info>) -> Texture {
+    let texture: Texture;
+
+    if info.is_some() {
+        // Get image data from buffer view
+        let image_source = info.unwrap().texture().source().source();
+        match image_source {
+            gltf::image::Source::Uri { uri, .. } => {
+                let gltf_dir = std::path::Path::new(gltf_path);
+                let texture_path = gltf_dir.with_file_name(uri);
+
+                texture = Texture::new(texture_path.to_str().unwrap());
+            }
+            gltf::image::Source::View { .. } => {
+                todo!();
+            }
+        }
+    } else {
+        texture = Texture::new("content/textures/missing.png");
+    }
+
+    return texture;
+}
+
+fn process_gltf_normal_map(gltf_path: &str, normal: Option<NormalTexture>) -> Texture {
+    let normal_texture: Texture;
+
+    if normal.is_some() {
+        // Get image data from buffer view
+        let image_source = normal.unwrap().texture().source().source();
+        match image_source {
+            gltf::image::Source::Uri { uri, .. } => {
+                let gltf_dir = std::path::Path::new(gltf_path);
+                let texture_path = gltf_dir.with_file_name(uri);
+
+                normal_texture = Texture::new(texture_path.to_str().unwrap());
+            }
+            gltf::image::Source::View { .. } => {
+                todo!();
+            }
+        }
+    } else {
+        normal_texture = Texture::new("content/textures/missing.png");
+    }
+
+    return normal_texture;
 }

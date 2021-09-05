@@ -21,6 +21,9 @@ pub struct Mesh {
     pub index_count: GLint,
 
     pub diffuse_texture: Texture,
+    pub orm_texture: Texture,
+    pub normal_texture: Texture,
+    pub emissive_texture: Texture,
 }
 
 impl Mesh {
@@ -29,7 +32,12 @@ impl Mesh {
         normals: Vec<GLfloat>,
         texcoords: Vec<GLfloat>,
         indices: Vec<GLuint>,
+        tangents: Vec<GLfloat>,
+        // bitangents: Vec<GLfloat>,
         diffuse_texture: Texture,
+        orm_texture: Texture,
+        normal_texture: Texture,
+        emissive_texture: Texture,
     ) -> Mesh {
         let mut model: Mesh = Mesh {
             vbo: 0,
@@ -37,7 +45,11 @@ impl Mesh {
             ebo: 0,
             vertex_count: (vertices.len() / 3) as GLint,
             index_count: (indices.len()) as GLint,
+
             diffuse_texture,
+            orm_texture,
+            normal_texture,
+            emissive_texture,
         };
 
         unsafe {
@@ -46,7 +58,7 @@ impl Mesh {
             gl::BindBuffer(gl::ARRAY_BUFFER, model.vbo);
             gl::BindVertexArray(model.vao);
 
-            log::trace!("Created VBO: {}", model.vbo);
+            //log::trace!("Created VBO: {}", model.vbo);
 
             // Pack vertices & normals into single vec
             let mut gl_data: Vec<GLfloat> = Vec::new();
@@ -61,6 +73,10 @@ impl Mesh {
 
                 gl_data.push(texcoords[i * 2]);
                 gl_data.push(texcoords[i * 2 + 1]);
+
+                gl_data.push(tangents[i * 3]);
+                gl_data.push(tangents[i * 3 + 1]);
+                gl_data.push(tangents[i * 3 + 2]);
             }
 
             // Buffer data
@@ -71,7 +87,7 @@ impl Mesh {
                 gl::STATIC_DRAW,
             );
 
-            let stride = (8 * std::mem::size_of::<GLfloat>()) as GLsizei;
+            let stride = ((3 + 3 + 2 + 3) * std::mem::size_of::<GLfloat>()) as GLsizei;
 
             // Attributes
             // Position
@@ -99,6 +115,17 @@ impl Mesh {
                 (6 * std::mem::size_of::<GLfloat>()) as *const c_void,
             );
             gl::EnableVertexAttribArray(2);
+
+            // Tangent
+            gl::VertexAttribPointer(
+                3,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                stride,
+                (8 * std::mem::size_of::<GLfloat>()) as *const c_void,
+            );
+            gl::EnableVertexAttribArray(3);
 
             // Indices
             gl::GenBuffers(1, &mut model.ebo);
