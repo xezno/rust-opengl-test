@@ -9,7 +9,7 @@
 use glam::*;
 use gltf::material::NormalTexture;
 
-use super::{camera::Camera, scene::LoadedScene, transform::Transform};
+use super::{scene::LoadedScene, transform::Transform};
 use crate::render::{mesh::Mesh, shader::Shader, texture::Texture};
 
 pub struct Model {

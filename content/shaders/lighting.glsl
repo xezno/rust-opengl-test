@@ -29,6 +29,7 @@ struct POINT_LIGHT {
 uniform STRUCT_MATERIAL materialInfo;
 uniform STRUCT_LIGHTING lightingInfo;
 uniform POINT_LIGHT pointLights[MAX_LIGHTS];
+uniform int iNumLights;
 
 uniform mat4 uLightSpaceMat;
 
@@ -72,8 +73,6 @@ uniform sampler2D gColorSpec;
 uniform sampler2D sShadowMap;
 
 out vec4 FragColor;
-
-// For poisson disk sampling
 vec2 poissonDisk[16] = vec2[] (
     vec2(-0.94201624,    -0.39906216), 
     vec2(0.94558609,     -0.76890725), 
@@ -93,16 +92,15 @@ vec2 poissonDisk[16] = vec2[] (
     vec2(0.14383161,     -0.14100790)
 );
 
-
 float GetRand(vec4 seed)
 {
     float dot_product = dot(seed, vec4(12.9898,78.233,45.164,94.673));
     return fract(sin(dot_product) * 43758.5453);
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal)
+float ShadowCalculation(vec3 worldCoords, vec4 fragPosLightSpace, vec3 normal)
 {
-    float bias = 0.000005;
+    float bias = 0.00001;
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     if (projCoords.z > 1.0)
         return 0.0;
@@ -112,16 +110,28 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal)
     float currentDepth = projCoords.z;
 
     float shadow = 0.0;
-    int samplesX = 6;
-    int samplesY = 6;
+    int samplesX = 3;
+    int samplesY = 3;
 
     vec2 texelSize = 1.0 / textureSize(sShadowMap, 0);
     for(int x = -samplesX/2; x <= samplesX/2; ++x)
     {
         for(int y = -samplesY/2; y <= samplesY/2; ++y)
         {
-            float pcfDepth = texture(sShadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+            if ( projCoords.x < 0 || projCoords.x > 1 || projCoords.y < 0 || projCoords.y > 1 )
+            {
+                return 1.0;
+            }
+            else 
+            {
+                vec3 worldCoords_ = worldCoords + vec3(x, y, 0) * texelSize.x;
+                worldCoords_.y = worldCoords_.y*2;
+
+                int index = int(16.0 * GetRand(vec4(gl_FragCoord.xyy, x+y))) % 16;
+                float projDepth = texture(sShadowMap, projCoords.xy + poissonDisk[index] * texelSize).r;
+                // float pcfDepth = texture(sShadowMap, projCoords.xy + vec2(x, y) * texelSize).r;                
+                shadow += currentDepth - bias > projDepth ? 1.0 : 0.0;
+            }
         }    
     }
     shadow /= (samplesX * samplesY);
@@ -167,16 +177,16 @@ void main()
         float attenuation = 1.0 / ( 32 + length( pointLights[i].vPos - vWorldPos ) );
         
         vColor += lighting * attenuation;
+
+        if ( i > iNumLights )
+            break;
     }
 
-    vColor = pow( vColor, vec3( 2.2 ) );
-
     vec4 vLightSpace = uLightSpaceMat * vec4( vWorldPos, 1.0 );
-    vColor *= mix( 0.1, 1.0, ShadowCalculation( vLightSpace, vNormal ));
+    vColor *= mix( 0.4, 1.25, ShadowCalculation( vWorldPos, vLightSpace, vNormal ));
 
+    vColor = pow( vColor, vec3( 2.2 ) );
     FragColor = vec4( vColor, 1.0 );
-    // FragColor = vec4( vec3( ShadowCalculation( vLightSpace ) ), 1.0 );
-    // FragColor = vLightSpace;
 }
 
 #endif

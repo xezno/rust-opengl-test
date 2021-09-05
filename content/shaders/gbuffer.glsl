@@ -119,7 +119,7 @@ void main()
 
         vec3 lambertian = lambert( normal, lightDir ) * diffuseCol.rgb;
         vec3 spec = specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ) ) * lightingInfo.vLightColor * materialInfo.fSpecular;
-        vec3 ambient = 0.7 * diffuseCol.rgb;
+        vec3 ambient = 0.9 * diffuseCol.rgb;
 
         vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;
         lighting += ambient * normalize( lightingInfo.vLightColor );
@@ -127,6 +127,8 @@ void main()
         diffuseCol = vec4( lighting, 1.0 );
         gColorSpec.rgb = diffuseCol.rgb;
     }
+    vec4 diffuseCol = texture( materialInfo.tDiffuseTex, fs_in.vTexCoords.xy );
+    gColorSpec.rgb = diffuseCol.rgb;
 
     // vec3 emissive = texture( materialInfo.tEmissiveTex, fs_in.vTexCoords.xy ).rgb;
     // gColorSpec.rgb = gColorSpec.rgb + emissive;

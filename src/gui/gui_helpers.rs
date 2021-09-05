@@ -10,7 +10,7 @@ use glam::{Quat, Vec3};
 use imgui::sys::*;
 use imgui::*;
 
-use crate::{scene::scene::LoadedScene, util::screen::get_screen};
+use crate::{render::shader::Shader, scene::scene::LoadedScene, util::screen::get_screen};
 
 pub fn gui_scene_hierarchy(ui: &Ui, scene: &mut LoadedScene) {
     let mut opened = true;
@@ -115,6 +115,20 @@ pub fn gui_perf_overlay(ui: &Ui, frames_last_second: i32) {
                 );
             }
         });
+}
+
+pub fn gui_shader_window(ui: &Ui, shaders: Vec<&mut Shader>) {
+    imgui::Window::new(imgui::im_str!("shaders")).build(&ui, || {
+        for shader in shaders {
+            if ui.button(
+                im_str!("Recompile {}", shader.shader_path).as_ref(),
+                [0.0, 0.0],
+            ) {
+                log::trace!("Recompiling shader: {:?}", shader.shader_path);
+                shader.load();
+            }
+        }
+    });
 }
 
 pub fn gui_g_buffers(

@@ -92,10 +92,15 @@ pub fn gfx_setup_gbuffer(
 
     let window_size = crate::util::screen::get_screen().size;
 
-    gfx_create_single_g_buffer(&mut *g_position, window_size, gl::COLOR_ATTACHMENT0);
-    gfx_create_single_g_buffer(&mut *g_normal, window_size, gl::COLOR_ATTACHMENT1);
-    gfx_create_single_g_buffer(&mut *g_color_spec, window_size, gl::COLOR_ATTACHMENT2);
-    gfx_create_single_g_buffer(&mut *g_orm, window_size, gl::COLOR_ATTACHMENT3);
+    gfx_create_single_g_buffer(&mut *g_position, window_size, gl::COLOR_ATTACHMENT0, false);
+    gfx_create_single_g_buffer(&mut *g_normal, window_size, gl::COLOR_ATTACHMENT1, true);
+    gfx_create_single_g_buffer(
+        &mut *g_color_spec,
+        window_size,
+        gl::COLOR_ATTACHMENT2,
+        false,
+    );
+    gfx_create_single_g_buffer(&mut *g_orm, window_size, gl::COLOR_ATTACHMENT3, false);
 
     let mut rbo: GLuint = 0;
     unsafe {
@@ -118,18 +123,23 @@ pub fn gfx_setup_gbuffer(
     return g_buffer;
 }
 
-fn gfx_create_single_g_buffer(g_buffer_tex: &mut GLuint, window_size: IVec2, attachment: GLuint) {
+fn gfx_create_single_g_buffer(
+    g_buffer_tex: &mut GLuint,
+    window_size: IVec2,
+    attachment: GLuint,
+    with_alpha: bool,
+) {
     unsafe {
         gl::GenTextures(1, g_buffer_tex);
         gl::BindTexture(gl::TEXTURE_2D, *g_buffer_tex);
         gl::TexImage2D(
             gl::TEXTURE_2D,
             0,
-            gl::RGBA16F as i32,
+            if with_alpha { gl::RGBA16F } else { gl::RGB16F } as i32,
             window_size.x,
             window_size.y,
             0,
-            gl::RGBA,
+            if with_alpha { gl::RGBA } else { gl::RGB },
             gl::FLOAT,
             std::ptr::null_mut(),
         );
@@ -224,7 +234,7 @@ pub fn gfx_prepare_geometry_pass(fbo: GLuint) {
     }
 }
 
-const shadow_map_size: GLint = 2048;
+const SHADOW_MAP_SIZE: GLint = 2048;
 
 pub fn gfx_prepare_shadow_pass(fbo: GLuint) {
     unsafe {
@@ -235,7 +245,7 @@ pub fn gfx_prepare_shadow_pass(fbo: GLuint) {
         gl::DepthFunc(gl::GREATER);
         gl::CullFace(gl::FRONT);
 
-        gl::Viewport(0, 0, shadow_map_size, shadow_map_size);
+        gl::Viewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
         let attachments = [gl::DEPTH_ATTACHMENT];
 
         gl::ClearDepth(0.0);
@@ -267,8 +277,6 @@ pub fn gfx_setup_shadow_buffer() -> (GLuint, GLuint) {
         gl::BindFramebuffer(gl::FRAMEBUFFER, shadow_buffer);
     }
 
-    let window_size = crate::util::screen::get_screen().size;
-
     unsafe {
         gl::GenTextures(1, &mut shadow_buffer_tex);
         gl::BindTexture(gl::TEXTURE_2D, shadow_buffer_tex);
@@ -276,8 +284,8 @@ pub fn gfx_setup_shadow_buffer() -> (GLuint, GLuint) {
             gl::TEXTURE_2D,
             0,
             gl::DEPTH_COMPONENT as i32,
-            shadow_map_size,
-            shadow_map_size,
+            SHADOW_MAP_SIZE,
+            SHADOW_MAP_SIZE,
             0,
             gl::DEPTH_COMPONENT,
             gl::FLOAT,

@@ -14,6 +14,8 @@ use gl::types::*;
 use std::collections::HashMap;
 
 pub struct Shader {
+    pub shader_path: String,
+
     pub program: u32,
     pub vertex: u32,
     pub fragment: u32,
@@ -23,9 +25,27 @@ pub struct Shader {
 
 impl Shader {
     pub fn new(shader_path: &str) -> Shader {
+        let mut shader = Shader {
+            shader_path: shader_path.to_string(),
+
+            program: 0,
+            vertex: 0,
+            fragment: 0,
+
+            program_uniforms: HashMap::new(),
+        };
+
+        shader.load();
+
+        return shader;
+    }
+
+    pub fn load(&mut self) {
+        log::trace!("Loading shader {}", self.shader_path);
+
         // Load shader from file
-        let shader_source = fs::read_to_string(shader_path)
-            .expect(&format!("Unable to read shader {}", shader_path).as_str());
+        let shader_source = fs::read_to_string(self.shader_path.as_str())
+            .expect(&format!("Unable to read shader {}", self.shader_path).as_str());
 
         unsafe {
             // Create gl objects
@@ -45,27 +65,26 @@ impl Shader {
             // Compile vertex shader
             gl::ShaderSource(vertex, 1, &vertex_source_ptr, ptr::null());
             gl::CompileShader(vertex);
-            Shader::check_shader_errors(vertex, "vertex", shader_path);
+            Shader::check_shader_errors(vertex, "vertex", self.shader_path.as_str());
 
             // Compile fragment shader
             gl::ShaderSource(fragment, 1, &fragment_source_ptr, ptr::null());
             gl::CompileShader(fragment);
-            Shader::check_shader_errors(fragment, "fragment", shader_path);
+            Shader::check_shader_errors(fragment, "fragment", self.shader_path.as_str());
 
             // Attach to program
             gl::AttachShader(program, vertex);
             gl::AttachShader(program, fragment);
 
-            crate::render::gfx::gfx_check_generic_errors();
+            // crate::render::gfx::gfx_check_generic_errors();
 
             gl::LinkProgram(program);
 
-            return Shader {
-                program,
-                vertex,
-                fragment,
-                program_uniforms: HashMap::new(),
-            };
+            self.program = program;
+            self.vertex = vertex;
+            self.fragment = fragment;
+
+            self.scan_uniforms();
         }
     }
 

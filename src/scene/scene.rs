@@ -6,7 +6,7 @@
 //
 // ============================================================================
 
-use glam::{Mat4, Quat, Vec3};
+use glam::{Quat, Vec3};
 use imgui::{im_str, ColorEdit, Condition, Ui, Window};
 use log::{info, warn};
 use rand::Rng;
@@ -14,7 +14,7 @@ use random_color::{Luminosity, RandomColor};
 use serde_json::*;
 use std::fs;
 
-use super::{camera::Camera, model::Model, transform::Transform};
+use super::{model::Model, transform::Transform};
 use crate::render::{material::Material, shader::Shader};
 
 #[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
@@ -36,6 +36,7 @@ pub struct Object {
     pub transform: Transform,
     pub material: Option<Material>,
     pub phys: Option<String>,
+    pub color: Option<Vec3>,
 }
 
 #[derive(Clone, Copy)]
@@ -96,6 +97,8 @@ impl Scene {
                 "light_sun" => {
                     info!("Scene: loading sun light");
                     loaded_scene.sun_light.direction = object.transform.rotation;
+                    loaded_scene.sun_light.color =
+                        object.color.unwrap_or(glam::vec3(1.0, 1.0, 1.0));
                 }
                 "light_point" => {
                     info!(
@@ -120,38 +123,13 @@ impl Scene {
 
 impl LoadedScene {
     pub fn new() -> Self {
-        // TEST: Add a bunch of point lights (HACK/TODO)
-        let mut point_lights = Vec::new();
-        for _ in 0..4 {
-            let rand_pos = Vec3::new(
-                rand::thread_rng().gen_range(-10.0..=10.0),
-                rand::thread_rng().gen_range(-50.0..=50.0),
-                rand::thread_rng().gen_range(0.0..=50.0),
-            );
-
-            // Random weighted color
-            let rand_col = crate::render::color::col_from_hex(
-                RandomColor::new()
-                    .luminosity(Luminosity::Bright)
-                    .to_hex()
-                    .as_str(),
-            );
-
-            let light = PointLight {
-                transform: Transform::new(rand_pos, Quat::IDENTITY, Vec3::ONE),
-                color: Vec3::new(rand_col.0, rand_col.1, rand_col.2) * 8.0,
-                orig_pos: rand_pos,
-            };
-            point_lights.push(light);
-        }
-
         LoadedScene {
             models: Vec::new(),
             sun_light: SunLight {
                 color: Vec3::new(1.0, 1.0, 1.0),
                 direction: Quat::IDENTITY,
             },
-            point_lights: point_lights,
+            point_lights: Vec::new(),
         }
     }
 

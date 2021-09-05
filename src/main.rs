@@ -11,7 +11,7 @@ extern crate sdl2;
 
 use gl::types::GLuint;
 use glam::*;
-use gui::gui_helpers::gui_g_buffers;
+use gui::gui_helpers::{gui_g_buffers, gui_shader_window};
 use imgui::sys::ImGuiDockNodeFlags_PassthruCentralNode;
 
 use render::{gfx::*, shader::Shader};
@@ -91,7 +91,7 @@ fn main() {
     //
     // Shadow buffer setup
     //
-    let (mut shadow_buffer, mut shadow_texture) = gfx_setup_shadow_buffer();
+    let (shadow_buffer, shadow_texture) = gfx_setup_shadow_buffer();
     // let mut shadow_texture = 0;
 
     //
@@ -108,9 +108,9 @@ fn main() {
         &mut g_orm,
     );
     let mut gbuffer_shader = Shader::new("content/shaders/gbuffer.glsl");
-    gbuffer_shader.scan_uniforms();
+    //gbuffer_shader.scan_uniforms();
     let mut lighting_shader = Shader::new("content/shaders/lighting.glsl");
-    lighting_shader.scan_uniforms();
+    //lighting_shader.scan_uniforms();
 
     //
     // Scene setup
@@ -138,7 +138,7 @@ fn main() {
     //
     let debug_model = crate::scene::model::Model::new("content/models/sphere.gltf");
     let mut debug_shader = Shader::new("content/shaders/gbuffer_light_debug.glsl");
-    debug_shader.scan_uniforms();
+    //debug_shader.scan_uniforms();
 
     'main: loop {
         // Reset input
@@ -156,7 +156,6 @@ fn main() {
             &mut g_normal,
             &mut g_color_spec,
             &mut g_orm,
-            &mut shadow_texture,
         ) {
             break 'main;
         }
@@ -202,7 +201,7 @@ fn main() {
                 gfx_clear();
 
                 let pos = vec3(0.0, 0.0, 100.0);
-                let size = 50.0;
+                let size = 150.0;
                 let view_matrix = Mat4::IDENTITY
                     * Mat4::from_quat(loaded_scene.sun_light.direction)
                     * Mat4::from_translation(pos);
@@ -210,6 +209,24 @@ fn main() {
                 light_space_mat = proj_matrix * view_matrix;
 
                 loaded_scene.render(&mut gbuffer_shader, &light_space_mat, &pos);
+
+                // Draw debug
+                {
+                    debug_shader.bind();
+                    debug_shader.set_mat4("uProjViewMat", &light_space_mat);
+                    for (_, point_light) in loaded_scene.point_lights.iter().enumerate() {
+                        debug_shader.set_vec3("uCamPos", &pos);
+
+                        // Calc model matrix
+                        let mut model_mat = Mat4::from_translation(point_light.transform.position);
+                        model_mat *= Mat4::from_scale(vec3(0.1, 0.1, 0.1));
+                        debug_shader.set_mat4("uModelMat", &model_mat);
+                        debug_shader.set_vec3("vDebugLightCol", &point_light.color);
+                        for mesh in &debug_model.meshes {
+                            mesh.render();
+                        }
+                    }
+                }
             }
 
             // Geo pass
@@ -315,6 +332,8 @@ fn main() {
                     );
                 }
 
+                lighting_shader.set_i32("iNumLights", loaded_scene.point_lights.len() as i32);
+
                 // Render quad
                 gfx_quad_render(quad_vao);
             }
@@ -342,6 +361,11 @@ fn main() {
                     &g_color_spec,
                     &g_orm,
                     &shadow_texture,
+                );
+
+                gui_shader_window(
+                    &ui,
+                    Vec::from([&mut lighting_shader, &mut debug_shader, &mut gbuffer_shader]),
                 );
 
                 imgui_renderer.render(ui);
@@ -386,7 +410,6 @@ fn handle_input(
     g_normal: &mut GLuint,
     g_color_spec: &mut GLuint,
     g_orm: &mut GLuint,
-    shadow_texture: &mut GLuint,
 ) -> bool {
     for event in event_pump.poll_iter() {
         imgui_sdl2.handle_event(imgui, &event);
