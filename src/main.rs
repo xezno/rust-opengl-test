@@ -15,8 +15,6 @@ use gui::gui_helpers::gui_g_buffers;
 use imgui::sys::ImGuiDockNodeFlags_PassthruCentralNode;
 
 use render::{gfx::*, shader::Shader};
-
-#[cfg(renderdoc_enabled)]
 use renderdoc::{RenderDoc, V110};
 
 use scene::orbitcamera::OrbitCamera;
@@ -34,13 +32,9 @@ pub mod util;
 
 fn main() {
     {
-        #[cfg(debug_timed)]
-        pretty_env_logger::init_timed();
         #[cfg(not(debug_timed))]
         pretty_env_logger::init();
     }
-
-    #[cfg(renderdoc_enabled)]
     let _rd: RenderDoc<V110> = RenderDoc::new().expect("Unable to connect");
 
     let sdl = sdl2::init().unwrap();
