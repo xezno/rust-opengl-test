@@ -40,7 +40,13 @@ impl Model {
         return model;
     }
 
-    pub fn render(&self, scene: &LoadedScene, shader: &mut Shader, camera: &mut Camera) {
+    pub fn render(
+        &self,
+        scene: &LoadedScene,
+        shader: &mut Shader,
+        proj_view_mat: &glam::Mat4,
+        cam_pos: &Vec3,
+    ) {
         for mesh in &self.meshes {
             shader.bind();
             {
@@ -50,16 +56,16 @@ impl Model {
                 model_mat *= Mat4::from_quat(self.transform.rotation);
 
                 // Submit shader uniforms
-                shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
+                shader.set_mat4("uProjViewMat", proj_view_mat);
                 shader.set_mat4("uModelMat", &model_mat);
-                shader.set_vec3("uCamPos", &camera.position);
+                shader.set_vec3("uCamPos", cam_pos);
 
                 // Submit scene uniforms
                 shader.set_vec3(
                     "lightingInfo.vLightDir",
-                    &scene.light.direction.to_euler(EulerRot::XYZ).into(),
+                    &scene.sun_light.direction.to_euler(EulerRot::XYZ).into(),
                 );
-                shader.set_vec3("lightingInfo.vLightColor", &scene.light.color);
+                shader.set_vec3("lightingInfo.vLightColor", &scene.sun_light.color);
 
                 // Submit material uniforms
                 shader.set_f32("materialInfo.fSpecular", 0.0);
@@ -132,10 +138,7 @@ fn process_gltf_mesh(
         let mut tangents = vec![[1.0; 4]; positions.len()];
 
         if reader.read_tangents().is_some() {
-            println!("We have tangents here");
             tangents = reader.read_tangents().unwrap().collect::<Vec<[f32; 4]>>();
-        } else {
-            println!("We don't have tangents here");
         }
 
         for i in 0..positions.len() {

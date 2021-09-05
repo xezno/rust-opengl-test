@@ -88,6 +88,15 @@ pub fn gui_scene_hierarchy(ui: &Ui, scene: &mut LoadedScene) {
         });
 }
 
+pub fn gui_shadow_text(ui: &Ui, text: ImString, pos: [f32; 2]) {
+    let draw_list = ui.get_background_draw_list();
+
+    let pos_offset = [pos[0] + 1.0, pos[1] + 1.0];
+
+    draw_list.add_text(pos_offset, 0x44000000, text.clone()); // Shadow
+    draw_list.add_text(pos, 0xFFFFFFFF, text.clone());
+}
+
 pub fn gui_perf_overlay(ui: &Ui, frames_last_second: i32) {
     imgui::Window::new(imgui::im_str!("perfOverlay##hidelabel"))
         .flags(
@@ -96,18 +105,7 @@ pub fn gui_perf_overlay(ui: &Ui, frames_last_second: i32) {
                 | imgui::WindowFlags::NO_INPUTS,
         )
         .build(&ui, || {
-            let draw_list = ui.get_background_draw_list();
-
-            draw_list.add_text(
-                [17.0, 17.0],
-                0x44000000,
-                im_str!("FPS: {:#?}", frames_last_second),
-            ); // Shadow
-            draw_list.add_text(
-                [16.0, 16.0],
-                0xFFFFFFFF,
-                im_str!("FPS: {:#?}", frames_last_second),
-            );
+            gui_shadow_text(&ui, im_str!("FPS: {:#?}", frames_last_second), [16.0, 16.0]);
 
             unsafe {
                 igSetWindowSizeStr(
@@ -119,7 +117,14 @@ pub fn gui_perf_overlay(ui: &Ui, frames_last_second: i32) {
         });
 }
 
-pub fn gui_g_buffers(ui: &imgui::Ui, g_position: &u32, g_normal: &u32, g_color_spec: &u32) -> () {
+pub fn gui_g_buffers(
+    ui: &imgui::Ui,
+    g_position: &u32,
+    g_normal: &u32,
+    g_color_spec: &u32,
+    g_orm: &u32,
+    shadow_texture: &u32,
+) -> () {
     imgui::Window::new(imgui::im_str!("G-Buffers")).build(&ui, || {
         let mut size: ImVec2 = ImVec2::new(0.0, 0.0);
         unsafe {
@@ -137,15 +142,30 @@ pub fn gui_g_buffers(ui: &imgui::Ui, g_position: &u32, g_normal: &u32, g_color_s
             .uv0([0.0, 1.0])
             .uv1([1.0, 0.0])
             .build(&ui);
+        ui.text(im_str!("Position name: {}", g_position));
 
         Image::new(TextureId::new(g_normal.clone() as usize), size_arr)
             .uv0([0.0, 1.0])
             .uv1([1.0, 0.0])
             .build(&ui);
+        ui.text(im_str!("normal name: {}", g_normal));
 
         Image::new(TextureId::new(g_color_spec.clone() as usize), size_arr)
             .uv0([0.0, 1.0])
             .uv1([1.0, 0.0])
             .build(&ui);
+        ui.text(im_str!("color spec: {}", g_color_spec));
+
+        Image::new(TextureId::new(g_orm.clone() as usize), size_arr)
+            .uv0([0.0, 1.0])
+            .uv1([1.0, 0.0])
+            .build(&ui);
+        ui.text(im_str!("orm name: {}", g_orm));
+
+        Image::new(TextureId::new(shadow_texture.clone() as usize), size_arr)
+            .uv0([0.0, 1.0])
+            .uv1([1.0, 0.0])
+            .build(&ui);
+        ui.text(im_str!("shadow_texture name: {}", shadow_texture));
     });
 }

@@ -42,8 +42,6 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
             )
             .unwrap();
 
-        gl::ClipControl(gl::LOWER_LEFT, gl::ZERO_TO_ONE);
-
         let window_icon = sdl2::surface::Surface::load_bmp("content/suzanne.bmp").unwrap();
         window.set_icon(&window_icon);
 
@@ -84,6 +82,7 @@ pub fn gfx_setup_gbuffer(
     g_position: &mut GLuint,
     g_normal: &mut GLuint,
     g_color_spec: &mut GLuint,
+    g_orm: &mut GLuint,
 ) -> GLuint {
     let mut g_buffer: GLuint = 0;
     unsafe {
@@ -96,6 +95,7 @@ pub fn gfx_setup_gbuffer(
     gfx_create_single_g_buffer(&mut *g_position, window_size, gl::COLOR_ATTACHMENT0);
     gfx_create_single_g_buffer(&mut *g_normal, window_size, gl::COLOR_ATTACHMENT1);
     gfx_create_single_g_buffer(&mut *g_color_spec, window_size, gl::COLOR_ATTACHMENT2);
+    gfx_create_single_g_buffer(&mut *g_orm, window_size, gl::COLOR_ATTACHMENT3);
 
     let mut rbo: GLuint = 0;
     unsafe {
@@ -196,21 +196,57 @@ pub fn gfx_quad_render(vao: GLuint) {
     }
 }
 
-pub fn gfx_prepare_geometry_pass() {
+pub fn gfx_prepare_geometry_pass(fbo: GLuint) {
     unsafe {
+        gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
+
         gl::Enable(gl::DEPTH_TEST);
+        gl::ClipControl(gl::LOWER_LEFT, gl::ZERO_TO_ONE);
+        gl::DepthFunc(gl::GREATER);
+        gl::CullFace(gl::BACK);
+
+        gl::Viewport(
+            0,
+            0,
+            crate::util::screen::get_screen().size.x,
+            crate::util::screen::get_screen().size.y,
+        );
+
         let attachments = [
             gl::COLOR_ATTACHMENT0,
             gl::COLOR_ATTACHMENT1,
             gl::COLOR_ATTACHMENT2,
+            gl::COLOR_ATTACHMENT3,
         ];
+        gl::ClearDepth(0.0);
         gl::ClearColor(0.0, 0.0, 0.0, 0.0);
-        gl::DrawBuffers(3, &attachments[0]);
+        gl::NamedFramebufferDrawBuffers(fbo, 4, &attachments[0]);
+    }
+}
+
+const shadow_map_size: GLint = 2048;
+
+pub fn gfx_prepare_shadow_pass(fbo: GLuint) {
+    unsafe {
+        gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
+
+        gl::Enable(gl::DEPTH_TEST);
+        gl::ClipControl(gl::LOWER_LEFT, gl::NEGATIVE_ONE_TO_ONE);
+        gl::DepthFunc(gl::GREATER);
+        gl::CullFace(gl::FRONT);
+
+        gl::Viewport(0, 0, shadow_map_size, shadow_map_size);
+        let attachments = [gl::DEPTH_ATTACHMENT];
+
+        gl::ClearDepth(0.0);
+        gl::ClearColor(0.0, 0.0, 0.0, 0.0);
+        gl::NamedFramebufferDrawBuffers(fbo, 1, &attachments[0]);
     }
 }
 
 pub fn gfx_prepare_lighting_pass(sky_color: &(f32, f32, f32)) {
     unsafe {
+        gl::DepthFunc(gl::LESS);
         gl::Disable(gl::DEPTH_TEST);
         gl::ClearColor(sky_color.0, sky_color.1, sky_color.2, 1.0);
         gl::Enable(gl::FRAMEBUFFER_SRGB);
@@ -221,4 +257,54 @@ pub fn gfx_prepare_imgui_pass() {
     unsafe {
         gl::Disable(gl::FRAMEBUFFER_SRGB);
     }
+}
+
+pub fn gfx_setup_shadow_buffer() -> (GLuint, GLuint) {
+    let mut shadow_buffer: GLuint = 0;
+    let mut shadow_buffer_tex: GLuint = 0;
+    unsafe {
+        gl::GenFramebuffers(1, &mut shadow_buffer);
+        gl::BindFramebuffer(gl::FRAMEBUFFER, shadow_buffer);
+    }
+
+    let window_size = crate::util::screen::get_screen().size;
+
+    unsafe {
+        gl::GenTextures(1, &mut shadow_buffer_tex);
+        gl::BindTexture(gl::TEXTURE_2D, shadow_buffer_tex);
+        gl::TexImage2D(
+            gl::TEXTURE_2D,
+            0,
+            gl::DEPTH_COMPONENT as i32,
+            shadow_map_size,
+            shadow_map_size,
+            0,
+            gl::DEPTH_COMPONENT,
+            gl::FLOAT,
+            std::ptr::null_mut(),
+        );
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
+        gl::TexParameteri(
+            gl::TEXTURE_2D,
+            gl::TEXTURE_WRAP_S,
+            gl::CLAMP_TO_BORDER as i32,
+        );
+        gl::TexParameteri(
+            gl::TEXTURE_2D,
+            gl::TEXTURE_WRAP_T,
+            gl::CLAMP_TO_BORDER as i32,
+        );
+        let border_color = [1.0, 1.0, 1.0, 1.0];
+        gl::TexParameterfv(gl::TEXTURE_2D, gl::TEXTURE_BORDER_COLOR, &border_color[0]);
+        gl::FramebufferTexture2D(
+            gl::FRAMEBUFFER,
+            gl::DEPTH_ATTACHMENT,
+            gl::TEXTURE_2D,
+            shadow_buffer_tex,
+            0,
+        );
+    }
+
+    return (shadow_buffer, shadow_buffer_tex);
 }

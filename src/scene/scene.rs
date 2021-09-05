@@ -6,7 +6,7 @@
 //
 // ============================================================================
 
-use glam::{Quat, Vec3};
+use glam::{Mat4, Quat, Vec3};
 use imgui::{im_str, ColorEdit, Condition, Ui, Window};
 use log::{info, warn};
 use rand::Rng;
@@ -57,7 +57,7 @@ pub struct LoadedScene {
     pub models: Vec<Model>,
     pub point_lights: Vec<PointLight>,
 
-    pub light: SunLight,
+    pub sun_light: SunLight,
 }
 
 impl Scene {
@@ -95,7 +95,7 @@ impl Scene {
                 }
                 "light_sun" => {
                     info!("Scene: loading sun light");
-                    loaded_scene.light.direction = object.transform.rotation;
+                    loaded_scene.sun_light.direction = object.transform.rotation;
                 }
                 "light_point" => {
                     info!(
@@ -147,7 +147,7 @@ impl LoadedScene {
 
         LoadedScene {
             models: Vec::new(),
-            light: SunLight {
+            sun_light: SunLight {
                 color: Vec3::new(1.0, 1.0, 1.0),
                 direction: Quat::IDENTITY,
             },
@@ -155,9 +155,9 @@ impl LoadedScene {
         }
     }
 
-    pub fn render(&self, shader: &mut Shader, camera: &mut Camera) {
+    pub fn render(&self, shader: &mut Shader, proj_view_mat: &glam::Mat4, cam_pos: &Vec3) {
         for object in &self.models {
-            object.render(&self, shader, camera);
+            object.render(&self, shader, proj_view_mat, cam_pos);
         }
     }
 
@@ -165,14 +165,14 @@ impl LoadedScene {
         Window::new(im_str!("Lighting Debug"))
             .size([300.0, 110.0], Condition::FirstUseEver)
             .build(&ui, || {
-                let mut color: [f32; 3] = self.light.color.into();
+                let mut color: [f32; 3] = self.sun_light.color.into();
 
                 if ColorEdit::new(im_str!("Light Color"), &mut color).build(&ui) {
-                    self.light.color = color.into();
+                    self.sun_light.color = color.into();
                 }
 
                 let mut direction: (f32, f32, f32) =
-                    self.light.direction.to_euler(glam::EulerRot::XYZ);
+                    self.sun_light.direction.to_euler(glam::EulerRot::XYZ);
                 direction.0 = direction.0.to_degrees();
                 direction.1 = direction.1.to_degrees();
                 direction.2 = direction.2.to_degrees();
@@ -183,7 +183,7 @@ impl LoadedScene {
                     .input_float3(im_str!("Direction"), &mut direction_array)
                     .build()
                 {
-                    self.light.direction = Quat::from_euler(
+                    self.sun_light.direction = Quat::from_euler(
                         glam::EulerRot::XYZ,
                         direction_array[0].to_radians(),
                         direction_array[1].to_radians(),

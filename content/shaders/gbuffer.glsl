@@ -79,6 +79,8 @@ uniform vec3 uCamPos;
 layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec4 gNormal;
 layout (location = 2) out vec4 gColorSpec;
+layout (location = 3) out vec4 gOrm;
+
 
 float lambert( vec3 normal, vec3 lightDir ) 
 {
@@ -117,7 +119,7 @@ void main()
 
         vec3 lambertian = lambert( normal, lightDir ) * diffuseCol.rgb;
         vec3 spec = specular( normal, lightDir, normalize( uCamPos - fs_in.vWorldPos ) ) * lightingInfo.vLightColor * materialInfo.fSpecular;
-        vec3 ambient = 0.3 * diffuseCol.rgb;
+        vec3 ambient = 0.7 * diffuseCol.rgb;
 
         vec3 lighting = ( lambertian + spec ) * lightingInfo.vLightColor;
         lighting += ambient * normalize( lightingInfo.vLightColor );
@@ -126,6 +128,10 @@ void main()
         gColorSpec.rgb = diffuseCol.rgb;
     }
 
+    // vec3 emissive = texture( materialInfo.tEmissiveTex, fs_in.vTexCoords.xy ).rgb;
+    // gColorSpec.rgb = gColorSpec.rgb + emissive;
+    
+    gOrm = vec4( texture( materialInfo.tOrmTex, fs_in.vTexCoords.xy ).rgb, 1.0 );
     gColorSpec.a = 1.0;
 }
 

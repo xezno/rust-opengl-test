@@ -180,7 +180,8 @@ impl OrbitCamera for Camera {
         // TODO: (re-)implement reversed-z properly
         // Camera::create_perspective_reversed_z(self.fov.to_radians(), aspect_ratio, self.z_near);
         self.proj_mat =
-            Mat4::perspective_rh(self.fov.to_radians(), aspect_ratio, self.z_near, self.z_far);
+            Mat4::perspective_infinite_reverse_rh(self.fov.to_radians(), aspect_ratio, self.z_near);
+        // Mat4::perspective_rh(self.fov.to_radians(), aspect_ratio, self.z_near, self.z_far);
 
         self.proj_view_mat = self.proj_mat * self.view_mat;
     }

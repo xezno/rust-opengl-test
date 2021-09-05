@@ -20,7 +20,7 @@ use renderdoc::{RenderDoc, V110};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
 
-use sdl2::sys::SDL_GL_SetAttribute;
+use sdl2::sys::{SDL_GL_SetAttribute, SDL_GL_SetSwapInterval};
 use util::{input::INPUT, screen::update_screen, time::update_time};
 
 use crate::gui::gui_helpers::{gui_perf_overlay, gui_scene_hierarchy};
@@ -74,6 +74,10 @@ fn main() {
 
     let _gl_context = window.gl_create_context().unwrap();
 
+    unsafe {
+        assert_eq!(0, SDL_GL_SetSwapInterval(0));
+    }
+
     let _gl = gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
     let _viewport = gl::Viewport::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
 
@@ -84,6 +88,11 @@ fn main() {
     let mut imgui_sdl2 = imgui_sdl2::ImguiSdl2::new(&mut imgui, &window);
 
     gfx_setup(&mut window);
+    //
+    // Shadow buffer setup
+    //
+    let (mut shadow_buffer, mut shadow_texture) = gfx_setup_shadow_buffer();
+    // let mut shadow_texture = 0;
 
     //
     // Gbuffer setup
@@ -91,7 +100,13 @@ fn main() {
     let mut g_position: GLuint = 0;
     let mut g_normal: GLuint = 0;
     let mut g_color_spec: GLuint = 0;
-    let mut g_buffer = gfx_setup_gbuffer(&mut g_position, &mut g_normal, &mut g_color_spec);
+    let mut g_orm: GLuint = 0;
+    let mut g_buffer = gfx_setup_gbuffer(
+        &mut g_position,
+        &mut g_normal,
+        &mut g_color_spec,
+        &mut g_orm,
+    );
     let mut gbuffer_shader = Shader::new("content/shaders/gbuffer.glsl");
     gbuffer_shader.scan_uniforms();
     let mut lighting_shader = Shader::new("content/shaders/lighting.glsl");
@@ -140,6 +155,8 @@ fn main() {
             &mut g_position,
             &mut g_normal,
             &mut g_color_spec,
+            &mut g_orm,
+            &mut shadow_texture,
         ) {
             break 'main;
         }
@@ -177,12 +194,30 @@ fn main() {
         // Render
         //
         {
+            let light_space_mat;
+            // Shadow pass
+            {
+                // gfx_bind_framebuffer(shadow_buffer);
+                gfx_prepare_shadow_pass(shadow_buffer);
+                gfx_clear();
+
+                let pos = vec3(0.0, 0.0, 100.0);
+                let size = 50.0;
+                let view_matrix = Mat4::IDENTITY
+                    * Mat4::from_quat(loaded_scene.sun_light.direction)
+                    * Mat4::from_translation(pos);
+                let proj_matrix = Mat4::orthographic_lh(-size, size, -size, size, 0.1, 1000.0);
+                light_space_mat = proj_matrix * view_matrix;
+
+                loaded_scene.render(&mut gbuffer_shader, &light_space_mat, &pos);
+            }
+
             // Geo pass
             {
-                gfx_prepare_geometry_pass();
-                gfx_bind_framebuffer(g_buffer);
+                //gfx_bind_framebuffer(g_buffer);
+                gfx_prepare_geometry_pass(g_buffer);
                 gfx_clear();
-                loaded_scene.render(&mut gbuffer_shader, &mut camera);
+                loaded_scene.render(&mut gbuffer_shader, &camera.proj_view_mat, &camera.position);
 
                 // Draw debug
                 {
@@ -207,9 +242,9 @@ fn main() {
             {
                 // TODO: Proper skyboxes
                 let mut sky_color = crate::render::color::col_from_hex("#6495ED");
-                let mut scale = loaded_scene.light.color.x
-                    + loaded_scene.light.color.y
-                    + loaded_scene.light.color.z;
+                let mut scale = loaded_scene.sun_light.color.x
+                    + loaded_scene.sun_light.color.y
+                    + loaded_scene.sun_light.color.z;
                 scale /= 3.0;
 
                 sky_color.0 *= scale;
@@ -231,22 +266,33 @@ fn main() {
                     gl::BindTexture(gl::TEXTURE_2D, g_normal);
                     gl::ActiveTexture(gl::TEXTURE2);
                     gl::BindTexture(gl::TEXTURE_2D, g_color_spec);
+                    gl::ActiveTexture(gl::TEXTURE3);
+                    gl::BindTexture(gl::TEXTURE_2D, g_orm);
+                    gl::ActiveTexture(gl::TEXTURE4);
+                    gl::BindTexture(gl::TEXTURE_2D, shadow_texture);
                 }
 
                 lighting_shader.set_i32("gPosition", 0);
                 lighting_shader.set_i32("gNormal", 1);
                 lighting_shader.set_i32("gColorSpec", 2);
+                lighting_shader.set_i32("gOrm", 3);
+                lighting_shader.set_i32("sShadowMap", 4);
 
                 // Submit scene uniforms
                 lighting_shader.set_mat4("uProjViewMat", &camera.proj_view_mat);
                 lighting_shader.set_vec3("uCamPos", &camera.position);
+                lighting_shader.set_mat4("uLightSpaceMat", &light_space_mat);
 
                 // Set lighting uniforms
                 lighting_shader.set_vec3(
                     "lightingInfo.vLightDir",
-                    &loaded_scene.light.direction.to_euler(EulerRot::XYZ).into(),
+                    &loaded_scene
+                        .sun_light
+                        .direction
+                        .to_euler(EulerRot::XYZ)
+                        .into(),
                 );
-                lighting_shader.set_vec3("lightingInfo.vLightColor", &loaded_scene.light.color);
+                lighting_shader.set_vec3("lightingInfo.vLightColor", &loaded_scene.sun_light.color);
                 lighting_shader.set_vec3(
                     "lightingInfo.vFogColor",
                     &Vec3::new(sky_color.0, sky_color.1, sky_color.2),
@@ -289,7 +335,14 @@ fn main() {
 
                 gui_scene_hierarchy(&ui, &mut loaded_scene);
                 gui_perf_overlay(&ui, frames_last_second);
-                gui_g_buffers(&ui, &g_position, &g_normal, &g_color_spec);
+                gui_g_buffers(
+                    &ui,
+                    &g_position,
+                    &g_normal,
+                    &g_color_spec,
+                    &g_orm,
+                    &shadow_texture,
+                );
 
                 imgui_renderer.render(ui);
             }
@@ -332,6 +385,8 @@ fn handle_input(
     g_position: &mut GLuint,
     g_normal: &mut GLuint,
     g_color_spec: &mut GLuint,
+    g_orm: &mut GLuint,
+    shadow_texture: &mut GLuint,
 ) -> bool {
     for event in event_pump.poll_iter() {
         imgui_sdl2.handle_event(imgui, &event);
@@ -383,7 +438,7 @@ fn handle_input(
                     update_screen(IVec2::new(w, h));
 
                     // HACK? Resize gbuffers
-                    *g_buffer = gfx_setup_gbuffer(g_position, g_normal, g_color_spec);
+                    *g_buffer = gfx_setup_gbuffer(g_position, g_normal, g_color_spec, g_orm);
                 }
                 _ => {}
             },
