@@ -31,3 +31,4 @@ version_check = "0.9.3"
 build_timestamp = "0.1.0"
 
 renderdoc = "0.10.1"
+netcorehost = "0.6.4"

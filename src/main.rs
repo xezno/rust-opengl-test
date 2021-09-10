@@ -5,6 +5,7 @@
 // Purpose: The main entry point for the application.
 //
 // ============================================================================
+#![feature(float_interpolation)]
 
 extern crate gl;
 extern crate sdl2;
@@ -20,6 +21,7 @@ use renderdoc::{RenderDoc, V110};
 use scene::orbitcamera::OrbitCamera;
 use scene::{camera::Camera, scene::Scene};
 
+use scripting::script_manager::ScriptManager;
 use sdl2::sys::{SDL_GL_SetAttribute, SDL_GL_SetSwapInterval};
 use util::{input::INPUT, screen::update_screen, time::update_time};
 
@@ -28,9 +30,17 @@ use crate::gui::gui_helpers::{gui_perf_overlay, gui_scene_hierarchy};
 pub mod gui;
 pub mod render;
 pub mod scene;
+
+pub mod scripting;
 pub mod util;
 
 fn main() {
+    {
+        ScriptManager::new();
+        std::thread::sleep(std::time::Duration::from_secs(5));
+        return;
+    }
+
     {
         #[cfg(not(debug_timed))]
         pretty_env_logger::init();

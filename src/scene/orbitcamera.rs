@@ -22,7 +22,7 @@ pub trait OrbitCamera {
     fn create_perspective_reversed_z(fov_radians: f32, aspect_ratio: f32, z_near: f32) -> Mat4;
 }
 
-use crate::util::{input::INPUT, lerp::Lerp, screen::get_screen, time::TIME};
+use crate::util::{input::INPUT, screen::get_screen, time::TIME};
 
 impl OrbitCamera for Camera {
     fn new() -> Self {
@@ -111,6 +111,24 @@ impl OrbitCamera for Camera {
         self.set_position_calc_view_proj_mat(self.position);
     }
 
+    fn rotate(&mut self, ui: &Ui) {
+        unsafe {
+            if INPUT.mouse.left {
+                ui.set_mouse_cursor(Some(MouseCursor::Hand));
+
+                self.euler_rot.x += INPUT.mouse.delta.x * 0.25;
+                self.euler_rot.y += INPUT.mouse.delta.y * 0.25;
+            } else {
+                // Uncomment for snapping
+                // self.euler_rot.x = self.euler_rot.x.lerp(0.0, 5.0 * TIME.delta);
+                // self.euler_rot.y = self.euler_rot.y.lerp(0.0, 5.0 * TIME.delta);
+            }
+        }
+
+        self.euler_rot.y %= 360.0;
+        self.euler_rot.y = self.euler_rot.y.clamp(-89f32, 89f32);
+    }
+
     fn move_lookat(&mut self, ui: &Ui) {
         let forward = vec3(
             self.euler_rot.x.to_radians().sin() * self.euler_rot.y.to_radians().cos(),
@@ -142,35 +160,6 @@ impl OrbitCamera for Camera {
         }
     }
 
-    fn rotate(&mut self, ui: &Ui) {
-        unsafe {
-            if INPUT.mouse.left {
-                ui.set_mouse_cursor(Some(MouseCursor::Hand));
-
-                self.euler_rot.x += INPUT.mouse.delta.x * 0.25;
-                self.euler_rot.y += INPUT.mouse.delta.y * 0.25;
-            } else {
-                // Uncomment for snapping
-                // self.euler_rot.x = self.euler_rot.x.lerp(0.0, 5.0 * TIME.delta);
-                // self.euler_rot.y = self.euler_rot.y.lerp(0.0, 5.0 * TIME.delta);
-            }
-        }
-
-        self.euler_rot.y %= 360.0;
-        self.euler_rot.y = self.euler_rot.y.clamp(-89f32, 89f32);
-    }
-
-    // TODO: Floating point depth buffer
-    fn create_perspective_reversed_z(fov_radians: f32, aspect_ratio: f32, z_near: f32) -> Mat4 {
-        let f = 1.0 / (fov_radians / 2.0).tan();
-        return Mat4::from_cols(
-            Vec4::new(f / aspect_ratio, 0.0, 0.0, 0.0),
-            Vec4::new(0.0, f, 0.0, 0.0),
-            Vec4::new(0.0, 0.0, 0.0, -1.0),
-            Vec4::new(0.0, 0.0, z_near, 0.0),
-        );
-    }
-
     fn calc_view_proj_mat(&mut self) {
         let screen_size = get_screen().size;
         let aspect_ratio = (screen_size.x as f32) / (screen_size.y as f32);
@@ -184,5 +173,16 @@ impl OrbitCamera for Camera {
         // Mat4::perspective_rh(self.fov.to_radians(), aspect_ratio, self.z_near, self.z_far);
 
         self.proj_view_mat = self.proj_mat * self.view_mat;
+    }
+
+    // TODO: Floating point depth buffer
+    fn create_perspective_reversed_z(fov_radians: f32, aspect_ratio: f32, z_near: f32) -> Mat4 {
+        let f = 1.0 / (fov_radians / 2.0).tan();
+        return Mat4::from_cols(
+            Vec4::new(f / aspect_ratio, 0.0, 0.0, 0.0),
+            Vec4::new(0.0, f, 0.0, 0.0),
+            Vec4::new(0.0, 0.0, 0.0, -1.0),
+            Vec4::new(0.0, 0.0, z_near, 0.0),
+        );
     }
 }
