@@ -67,7 +67,7 @@ pub fn gfx_check_generic_errors() {
         // Check for errors
         let error = gl::GetError();
         if error != gl::NO_ERROR {
-            panic!("Error compiling shader {}", error);
+            panic!("GL error {}", error); // TODO (04/09/2021): Handle this better
         }
     }
 }
