@@ -15,6 +15,7 @@ use glam::*;
 use gui::gui_helpers::{gui_g_buffers, gui_shader_window};
 use imgui::sys::ImGuiDockNodeFlags_PassthruCentralNode;
 
+use render::window::Window;
 use render::{gfx::*, shader::Shader};
 use renderdoc::{RenderDoc, V110};
 
@@ -36,68 +37,24 @@ pub mod util;
 
 fn main() {
     {
-        ScriptManager::new();
-        std::thread::sleep(std::time::Duration::from_secs(5));
-        return;
-    }
-
-    {
         #[cfg(not(debug_timed))]
         pretty_env_logger::init();
     }
     let _rd: RenderDoc<V110> = RenderDoc::new().expect("Unable to connect");
 
-    let sdl = sdl2::init().unwrap();
-    let video_subsystem = sdl.video().unwrap();
+    let mut window = Window::new();
 
-    unsafe {
-        assert_eq!(
-            0,
-            SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_MULTISAMPLEBUFFERS, 1)
-        );
-        assert_eq!(
-            0,
-            SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_MULTISAMPLESAMPLES, 4)
-        );
-    }
-
-    let win_size = uvec2(1600, 900);
-
-    let mut window = video_subsystem
-        .window("", win_size.x, win_size.y)
-        .opengl()
-        .resizable()
-        .build()
-        .unwrap();
-
-    unsafe {
-        SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-        SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_CONTEXT_MINOR_VERSION, 6);
-
-        SDL_GL_SetAttribute(
-            sdl2::sys::SDL_GLattr::SDL_GL_CONTEXT_PROFILE_MASK,
-            sdl2::sys::SDL_GLprofile::SDL_GL_CONTEXT_PROFILE_CORE as i32,
-        );
-    }
-
-    update_screen(win_size.as_i32());
-
-    let _gl_context = window.gl_create_context().unwrap();
-
-    unsafe {
-        assert_eq!(0, SDL_GL_SetSwapInterval(0));
-    }
-
-    let _gl = gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
-    let _viewport = gl::Viewport::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
+    let _gl = gl::load_with(|s| window.video_subsystem.gl_get_proc_address(s) as *const _);
+    let _viewport =
+        gl::Viewport::load_with(|s| window.video_subsystem.gl_get_proc_address(s) as *const _);
 
     let mut imgui = crate::util::imgui::imgui_init();
     let imgui_renderer = imgui_opengl_renderer::Renderer::new(&mut imgui, |s| {
-        video_subsystem.gl_get_proc_address(s) as _
+        window.video_subsystem.gl_get_proc_address(s) as _
     });
-    let mut imgui_sdl2 = imgui_sdl2::ImguiSdl2::new(&mut imgui, &window);
-
+    let mut imgui_sdl2 = imgui_sdl2::ImguiSdl2::new(&mut imgui, &window.sdl_window);
     gfx_setup(&mut window);
+
     //
     // Shadow buffer setup
     //
@@ -133,7 +90,7 @@ fn main() {
     //
     // Events
     //
-    let mut event_pump = sdl.event_pump().unwrap();
+    let mut event_pump = window.sdl.event_pump().unwrap();
     let mut last_render = std::time::Instant::now();
 
     //
@@ -149,6 +106,11 @@ fn main() {
     let debug_model = crate::scene::model::Model::new("content/models/sphere.gltf");
     let mut debug_shader = Shader::new("content/shaders/gbuffer_light_debug.glsl");
     //debug_shader.scan_uniforms();
+
+    //
+    // Scripting setup
+    //
+    ScriptManager::new();
 
     'main: loop {
         // Reset input
@@ -170,7 +132,11 @@ fn main() {
             break 'main;
         }
 
-        imgui_sdl2.prepare_frame(imgui.io_mut(), &window, &event_pump.mouse_state());
+        imgui_sdl2.prepare_frame(
+            imgui.io_mut(),
+            &window.sdl_window,
+            &event_pump.mouse_state(),
+        );
         let ui = imgui.frame();
 
         //
@@ -351,7 +317,7 @@ fn main() {
             // Draw imgui
             {
                 gfx_prepare_imgui_pass();
-                imgui_sdl2.prepare_render(&ui, &window);
+                imgui_sdl2.prepare_render(&ui, &window.sdl_window);
 
                 // Dock space
                 unsafe {
@@ -382,7 +348,7 @@ fn main() {
             }
 
             fps_counter += 1;
-            window.gl_swap_window();
+            window.swap();
         }
 
         //

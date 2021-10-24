@@ -13,8 +13,11 @@ namespace Test
 
     public delegate void Callback([MarshalAs(UnmanagedType.LPStr)] string str);
 
+
     public static class Program
     {
+        private static Callback? callback;
+
         public static int Hello(IntPtr args, int sizeBytes)
         {
             var test = Marshal.PtrToStructure<Test>(args);
@@ -24,10 +27,14 @@ namespace Test
             Console.WriteLine($"Name: {nameStr}");
             Console.WriteLine($"Age: {test.age}");
 
-            var callbackTestFn = Marshal.GetDelegateForFunctionPointer<Callback>(test.callback);
-            callbackTestFn.Invoke("8======D hehe");
+            callback = Marshal.GetDelegateForFunctionPointer<Callback>(test.callback);
 
             return test.age;
+        }
+
+        [UnmanagedCallersOnly]
+        public static void Update()
+        {
         }
     }
 }

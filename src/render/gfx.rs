@@ -11,7 +11,9 @@ use gl::types::*;
 use glam::IVec2;
 use std::{ffi::c_void, ptr};
 
-pub fn gfx_setup(window: &mut sdl2::video::Window) {
+use super::window::Window;
+
+pub fn gfx_setup(window: &mut Window) {
     unsafe {
         let mut major = -1;
         gl::GetIntegerv(gl::MAJOR_VERSION, &mut major);
@@ -26,6 +28,7 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
         build_time!("%Y-%m-%d %H:%M:%S");
 
         window
+            .sdl_window
             .set_title(
                 format!(
                     "{} {} | OpenGL {}.{} | Rust {} {}",
@@ -43,7 +46,7 @@ pub fn gfx_setup(window: &mut sdl2::video::Window) {
             .unwrap();
 
         let window_icon = sdl2::surface::Surface::load_bmp("content/suzanne.bmp").unwrap();
-        window.set_icon(&window_icon);
+        window.sdl_window.set_icon(&window_icon);
 
         gl::Enable(gl::MULTISAMPLE);
         gl::Enable(gl::CULL_FACE);
