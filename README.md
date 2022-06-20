@@ -4,7 +4,7 @@ Rust rendering thing
 
 ## Screenshots
 
-![Sponza Test](https://cdn.discordapp.com/attachments/862478456566972446/884086497924509776/unknown.png)
+![Sponza Test](https://user-images.githubusercontent.com/12881812/174595231-3d9b5ff1-8265-4768-9423-63ccc9dfc811.png)
 
 ## Instructions
 
